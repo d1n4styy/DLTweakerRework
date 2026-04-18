@@ -4,6 +4,9 @@
 # Секреты репозитория (Settings → Secrets → Actions):
 #   TAURI_SIGNING_PRIVATE_KEY — содержимое ключа (или base64), см. https://v2.tauri.app/plugin/updater/
 #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — пароль ключа, если задан при генерации
+#   RELEASE_PAT (опционально) — classic PAT с правом repo, если публикация падает с
+#     «Resource not accessible by integration»: в Settings → Actions → General для Workflow permissions
+#     должно быть «Read and write permissions», иначе GITHUB_TOKEN не может создать релиз.
 #
 # После первого успешного релиза в GitHub в релиз попадут установщик и latest.json;
 # клиенты подтянут их по URL из src-tauri/tauri.conf.json → plugins.updater.endpoints
@@ -26,6 +29,8 @@ concurrency:
 jobs:
   publish-windows:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,6 +49,12 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
+
+      - name: Cache Tauri bundler downloads (NSIS, WebView2, …)
+        uses: actions/cache@v4
+        with:
+          path: C:\Users\runneradmin\AppData\Local\tauri
+          key: tauri-bundler-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
 
       - name: Install frontend deps
         run: npm ci
@@ -74,7 +85,8 @@ jobs:
       - name: Build and upload release
         uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT != '' && secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
+          CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
