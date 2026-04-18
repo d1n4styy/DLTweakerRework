@@ -48,6 +48,29 @@ jobs:
       - name: Install frontend deps
         run: npm ci
 
+      - name: Текст релиза из release-notes.json
+        id: relnotes
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const tag = process.env.GITHUB_REF_NAME || "";
+          const ver = tag.startsWith("v") ? tag.slice(1) : tag;
+          const key = "v" + ver;
+          let body;
+          try {
+            const j = JSON.parse(fs.readFileSync("public/release-notes.json", "utf8"));
+            body = j[key];
+          } catch (e) {
+            body = null;
+          }
+          if (!body || String(body).trim() === "") {
+            body = "Релиз " + tag + ". Подробности см. в приложении (раздел «Что нового») или в public/release-notes.json.";
+          }
+          const esc = body.replace(/\r\n/g, "\n");
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `body<<RELNOTES_EOF\n${esc}\nRELNOTES_EOF\n`);
+          NODE
+
       - name: Build and upload release
         uses: tauri-apps/tauri-action@v0
         env:
@@ -58,7 +81,6 @@ jobs:
           projectPath: .
           tagName: ${{ github.ref_name }}
           releaseName: "Deadlock Tweaker (Rework) ${{ github.ref_name }}"
-          releaseBody: "Автособранный релиз: установщик Windows и latest.json для Tauri updater (см. ассеты)."
+          releaseBody: ${{ steps.relnotes.outputs.body }}
           releaseDraft: false
           prerelease: false
-          args: --verbose
