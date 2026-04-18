@@ -1,6 +1,6 @@
 const GH_RELEASES_API =
   "https://api.github.com/repos/d1n4styy/DLTweakerRework/releases?per_page=12";
-const QP_TREE = "https://github.com/d1n4styy/DLTweaker/tree/main/quick-patch";
+const QP_TREE = "https://github.com/d1n4styy/DLTweakerRework/tree/main/quick-patch";
 
 export type ChangelogItem = {
   tag: string;

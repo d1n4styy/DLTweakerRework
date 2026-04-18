@@ -135,7 +135,21 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/** Параллельно проверке NSIS: тихая подгрузка quick-patch (как в Electron). */
+let splashQpPromise: Promise<unknown> | null = null;
+
+function startSplashQuickPatch(): void {
+  splashQpPromise = invoke("quick_patch_apply", { silent: true }).catch(() => null);
+}
+
+async function drainSplashQuickPatch(maxMs: number): Promise<void> {
+  const p = splashQpPromise;
+  if (!p) return;
+  await Promise.race([p, sleep(maxMs)]);
+}
+
 async function openMainApp(): Promise<void> {
+  await drainSplashQuickPatch(16_000);
   applyPayload({ phase: "launching", message: "Запуск приложения…" });
   await sleep(220);
   await invoke("splash_open_main");
@@ -144,6 +158,7 @@ async function openMainApp(): Promise<void> {
 async function runSplashUpdateFlow(): Promise<void> {
   applyPayload({ phase: "checking", message: "Проверка обновлений…" });
   await sleep(90);
+  startSplashQuickPatch();
 
   try {
     const update = await check({ timeout: 14_000 });

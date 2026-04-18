@@ -1,0 +1,33 @@
+/* Quick patch: скрыть блок «Быстрые патчи» на вкладке обновлений (разметка могла остаться в старых сборках). */
+.settings-quickpatch,
+.settings-quickpatch-head,
+#settings-quickpatch-label,
+#settings-quickpatch-btn,
+#settings-quickpatch-status {
+  display: none !important;
+}
+
+.settings-updates-card .settings-update-msg {
+  margin-bottom: 0;
+}
+
+/* qp-1.0.24.2-1 */
+
+/* qp-rework-0.1.0-2: «Что нового» — одинаковая ширина/высота списка при переключении релизы ↔ quick-patch */
+.view-settings .settings-col-right {
+  align-items: stretch !important;
+}
+
+.view-settings .updates-changelog-card {
+  width: 100% !important;
+  max-width: min(100%, 720px) !important;
+  align-self: stretch !important;
+}
+
+.view-settings .updates-changelog-list {
+  flex: 0 0 auto !important;
+  height: min(400px, 46vh) !important;
+  min-height: min(400px, 46vh) !important;
+  max-height: min(400px, 46vh) !important;
+}
+

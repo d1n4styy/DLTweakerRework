@@ -1,0 +1,13 @@
+{
+  "id": "qp-rework-0.1.0-2",
+  "minAppSemver": "0.1.0",
+  "maxAppSemver": "99.99.99",
+  "description": "Вкладка «Обновления»: фиксированная область списка «Что нового» (релизы / quick-patch) без скачков ширины и высоты окна.",
+  "assets": [
+    {
+      "path": "overlay.css",
+      "url": "https://raw.githubusercontent.com/d1n4styy/DLTweakerRework/main/quick-patch/overlay.css",
+      "sha256": "31f6a93c5b37d043bfe9d770afe8056e8a69a35a305936ecebec9da587ab49ba"
+    }
+  ]
+}

@@ -1,7 +1,8 @@
+mod quick_patch;
+
 use serde_json::Value;
 use std::process::Command;
 use tauri::Manager;
-
 #[tauri::command]
 fn app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
@@ -68,37 +69,6 @@ fn deadlock_process_status() -> Value {
     serde_json::json!({"running": false, "image": null})
 }
 
-const QP_MANIFEST: &str =
-    "https://raw.githubusercontent.com/d1n4styy/DLTweaker/main/quick-patch/manifest.json";
-
-#[tauri::command]
-async fn quick_patch_check_only() -> Result<Value, String> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(12))
-        .build()
-        .map_err(|e| e.to_string())?;
-    let res = client
-        .get(QP_MANIFEST)
-        .header("Accept", "application/json")
-        .header("User-Agent", "DeadlockTweaker-Rework/quick-patch")
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    if !res.status().is_success() {
-        return Err(format!("HTTP {}", res.status()));
-    }
-    let text = res.text().await.map_err(|e| e.to_string())?;
-    let t = text.trim_start();
-    if t.starts_with('<') {
-        return Err("Сервер вернул HTML вместо манифеста".into());
-    }
-    let manifest: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-    Ok(serde_json::json!({
-        "ok": true,
-        "manifest": manifest
-    }))
-}
-
 /// Показать главное окно и закрыть сплэш (после проверки обновлений).
 #[tauri::command]
 async fn splash_open_main(app: tauri::AppHandle) -> Result<(), String> {
@@ -141,7 +111,9 @@ pub fn run() {
             profiles_load,
             profiles_save,
             deadlock_process_status,
-            quick_patch_check_only,
+            quick_patch::quick_patch_check_only,
+            quick_patch::quick_patch_apply,
+            quick_patch::quick_patch_get_css,
             splash_open_main,
         ])
         .run(tauri::generate_context!())

@@ -1321,7 +1321,7 @@ input[type='range'].range::-moz-range-track {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
   justify-self: stretch;
 }
 
@@ -1418,11 +1418,12 @@ html[data-theme='light'] .settings-update-kicker {
 .updates-changelog-card {
   position: relative;
   box-sizing: border-box;
-  width: fit-content;
+  width: 100%;
   max-width: min(100%, 720px);
   flex: 1;
   min-height: 0;
-  align-self: flex-end;
+  min-width: 0;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
   border-left: 3px solid var(--accent);
@@ -1438,9 +1439,12 @@ html[data-theme='light'] .updates-changelog-card {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   width: 100%;
+  min-width: 0;
+  height: min(400px, 46vh);
+  min-height: min(400px, 46vh);
+  max-height: min(400px, 46vh);
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 6px;

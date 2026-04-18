@@ -8,10 +8,7 @@ import { fetchReleaseNotes, type ChangelogItem } from "./release-notes";
 
 const THEME_KEY = "dl-theme";
 const VISUALS_SCRUB_POS_KEY = "dl-visuals-compare-scrub";
-const TRUSTED_GH_RELEASE_URLS = [
-  "https://github.com/d1n4styy/DLTweaker",
-  "https://github.com/d1n4styy/DLTweakerRework",
-];
+const TRUSTED_GH_RELEASE_URLS = ["https://github.com/d1n4styy/DLTweakerRework"];
 
 const DEFAULT_DASHBOARD_SETTINGS: Record<string, unknown> = {
   fov: 90,
@@ -1032,6 +1029,40 @@ function bindQuickActions(): void {
   });
 }
 
+type QuickPatchInvokeResult = {
+  ok?: boolean;
+  code?: string;
+  message?: string;
+  id?: string;
+  description?: string;
+  minV?: string;
+  maxV?: string;
+};
+
+async function refreshQuickPatchCss(): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    const css = await invoke<string>("quick_patch_get_css");
+    const existing = document.getElementById("dl-quick-patch-css");
+    if (!css) {
+      existing?.remove();
+      return;
+    }
+    const el = existing ?? document.createElement("style");
+    if (!existing) {
+      el.id = "dl-quick-patch-css";
+      document.head.appendChild(el);
+    }
+    el.textContent = css;
+  } catch {
+    /* ignore */
+  }
+}
+
+async function initQuickPatchStyles(): Promise<void> {
+  await refreshQuickPatchCss();
+}
+
 function bindSettingsUpdates(): void {
   const verEl = document.getElementById("settings-app-version");
   const btnCheck = document.getElementById("settings-check-updates") as HTMLButtonElement | null;
@@ -1054,6 +1085,7 @@ function bindSettingsUpdates(): void {
   }
 
   let pendingAppUpdate: Update | null = null;
+  let pendingUpdateKind: "none" | "nsis" | "qp" = "none";
 
   function setMsg(text: string, tone: "" | "ok" | "warn" | "err"): void {
     statusMsg.textContent = text;
@@ -1065,65 +1097,126 @@ function bindSettingsUpdates(): void {
 
   btnCheck.addEventListener("click", async () => {
     pendingAppUpdate = null;
+    pendingUpdateKind = "none";
     setMsg("Проверка…", "");
     btnCheck.disabled = true;
     btnDl.disabled = true;
     try {
       const parts: string[] = [];
-      let appOk = false;
+      let rQp: QuickPatchInvokeResult | null = null;
+
       if (isTauri()) {
         try {
           const update = await check();
           if (update) {
             pendingAppUpdate = update;
             parts.push(`Приложение: доступна версия ${update.version}.`);
-            appOk = true;
           } else {
-            parts.push("Приложение: обновлений нет или канал недоступен.");
+            parts.push("Приложение: новой версии нет — установлена последняя опубликованная сборка.");
           }
         } catch (e) {
           parts.push(`Приложение: ${e instanceof Error ? e.message : "ошибка проверки"}.`);
         }
 
         try {
-          const qp = await invoke<{ ok?: boolean; manifest?: Record<string, unknown> }>("quick_patch_check_only");
-          if (qp?.ok && qp.manifest && typeof qp.manifest === "object") {
-            const id = qp.manifest.id != null ? String(qp.manifest.id) : "";
-            parts.push(id ? `Quick-patch: манифест «${id}» загружен.` : "Quick-patch: манифест загружен.");
+          rQp = await invoke<QuickPatchInvokeResult>("quick_patch_check_only");
+          if (!rQp || rQp.ok !== true) {
+            parts.push(`Quick-patch: ${rQp?.message || "ошибка проверки"}.`);
+          } else if (rQp.code === "available") {
+            const d = rQp.description ? ` — ${rQp.description}` : "";
+            parts.push(`Quick-patch: доступен «${rQp.id ?? ""}»${d}.`);
+          } else if (rQp.code === "uptodate") {
+            parts.push("Quick-patch: уже актуален.");
+          } else if (rQp.code === "range") {
+            parts.push(rQp.message || "Quick-patch: не для этой версии приложения.");
+          } else if (rQp.code === "noop") {
+            parts.push("Quick-patch: в манифесте нет файлов для загрузки.");
           } else {
-            parts.push("Quick-patch: не удалось получить манифест.");
+            parts.push(rQp.message || "Quick-patch: готово.");
           }
         } catch (e) {
           parts.push(`Quick-patch: ${e instanceof Error ? e.message : "ошибка"}.`);
         }
+
+        if (pendingAppUpdate) pendingUpdateKind = "nsis";
+        else if (rQp && rQp.ok === true && rQp.code === "available") pendingUpdateKind = "qp";
+
+        if (pendingAppUpdate && rQp && rQp.ok === true && rQp.code === "available") {
+          parts.push("Сначала скачается версия приложения; quick-patch подтянется при следующем запуске.");
+        }
+
+        btnDl.disabled = pendingUpdateKind === "none";
+
+        let tone: "" | "ok" | "warn" | "err" = "ok";
+        if (pendingUpdateKind !== "none") {
+          tone = "ok";
+        } else if (parts.some((p) => p.startsWith("Приложение:") && p.includes("ошибка"))) {
+          tone = rQp && rQp.ok === true && rQp.code === "available" ? "ok" : "warn";
+        } else if (rQp && rQp.ok === false) {
+          tone = "warn";
+        }
+        setMsg(parts.join(" "), tone);
       } else {
         parts.push("Проверка обновлений доступна только в десктопной сборке Tauri.");
+        btnDl.disabled = true;
+        setMsg(parts.join(" "), "warn");
       }
-
-      btnDl.disabled = !pendingAppUpdate;
-      const tone: "ok" | "warn" | "err" | "" = appOk ? "ok" : parts.some((p) => p.includes("ошибка")) ? "warn" : "ok";
-      setMsg(parts.join(" "), tone);
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Ошибка", "err");
       btnDl.disabled = true;
+      pendingUpdateKind = "none";
     }
     btnCheck.disabled = false;
   });
 
   btnDl.addEventListener("click", async () => {
-    if (!pendingAppUpdate || !isTauri()) return;
-    setMsg("Скачивание и установка…", "");
-    btnDl.disabled = true;
-    btnCheck.disabled = true;
-    try {
-      await pendingAppUpdate.downloadAndInstall();
-      setMsg("Перезапуск…", "ok");
-      await relaunch();
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Ошибка установки", "err");
-      btnDl.disabled = false;
-    } finally {
-      btnCheck.disabled = false;
+    if (!isTauri() || pendingUpdateKind === "none") return;
+
+    if (pendingUpdateKind === "nsis" && pendingAppUpdate) {
+      setMsg("Скачивание и установка…", "");
+      btnDl.disabled = true;
+      btnCheck.disabled = true;
+      try {
+        await pendingAppUpdate.downloadAndInstall();
+        setMsg("Перезапуск…", "ok");
+        await relaunch();
+      } catch (e) {
+        setMsg(e instanceof Error ? e.message : "Ошибка установки", "err");
+        btnDl.disabled = false;
+      } finally {
+        btnCheck.disabled = false;
+      }
+      return;
+    }
+
+    if (pendingUpdateKind === "qp") {
+      setMsg("Загрузка quick-patch…", "");
+      btnDl.disabled = true;
+      btnCheck.disabled = true;
+      try {
+        const r = await invoke<QuickPatchInvokeResult>("quick_patch_apply", { silent: false });
+        pendingUpdateKind = "none";
+        if (!r || r.ok !== true) {
+          setMsg(r?.message || "Не удалось применить патч", "err");
+          btnDl.disabled = false;
+        } else if (r.code === "applied") {
+          setMsg(r.message || "Патч загружен и применён.", "ok");
+          btnDl.disabled = true;
+          await refreshQuickPatchCss();
+        } else if (r.code === "uptodate" || r.code === "noop") {
+          setMsg(r.message || "Готово", "ok");
+          btnDl.disabled = true;
+        } else {
+          setMsg(r.message || "Готово", "warn");
+          btnDl.disabled = false;
+        }
+      } catch (e) {
+        pendingUpdateKind = "none";
+        setMsg(e instanceof Error ? e.message : "Ошибка", "err");
+        btnDl.disabled = false;
+      } finally {
+        btnCheck.disabled = false;
+      }
     }
   });
 }
@@ -1160,6 +1253,7 @@ export async function initDeadlockApp(): Promise<void> {
   bindQuickActions();
   void initVisualsCompareAsset();
   bindVisualsCompareScrubber();
+  void initQuickPatchStyles();
   bindSettingsUpdates();
   startGameStatusPolling();
 
