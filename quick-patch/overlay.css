@@ -57,3 +57,31 @@ body {
   max-height: min(400px, 46vh) !important;
 }
 
+/* qp-rework-0.1.1-2: «Что нового» — на всю ширину правой колонки, выпадающий список к правому краю карточки */
+.view-settings .settings-layout {
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr) !important;
+  justify-items: stretch !important;
+  align-items: start !important;
+}
+
+.view-settings .settings-col-left {
+  justify-self: start !important;
+}
+
+.view-settings .settings-col-right {
+  justify-self: stretch !important;
+  width: 100% !important;
+}
+
+.view-settings .updates-changelog-toolbar {
+  justify-content: space-between !important;
+}
+
+.view-settings .select.updates-changelog-select {
+  margin-left: auto !important;
+}
+
+.view-settings .updates-changelog-card {
+  border-right: 1px solid var(--card-border) !important;
+}
+

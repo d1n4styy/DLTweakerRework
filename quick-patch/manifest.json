@@ -1,13 +1,13 @@
 {
-  "id": "qp-rework-0.1.1-1",
+  "id": "qp-rework-0.1.1-2",
   "minAppSemver": "0.1.0",
   "maxAppSemver": "99.99.99",
-  "description": "Вкладка «Обновления»: без расширения окна по ширине при смене списка (min-width у ячеек сетки, переносы текста). Совместимо с 0.1.0+.",
+  "description": "«Что нового»: карточка на всю ширину правой колонки; сетка 320px + 1fr; выпадающий список прижат к правому краю панели.",
   "assets": [
     {
       "path": "overlay.css",
       "url": "https://raw.githubusercontent.com/d1n4styy/DLTweakerRework/main/quick-patch/overlay.css",
-      "sha256": "26ff8ce790577a73a32cb35be9299d6263df71ac6ee6e28eaebae9f27da2df9c"
+      "sha256": "0897bcefc46336669acbe2eb587e9e6723030fe5c104dfad2d01d80a69b20fec"
     }
   ]
 }
