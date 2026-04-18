@@ -3,6 +3,9 @@ mod quick_patch;
 use serde_json::Value;
 use std::process::Command;
 use tauri::Manager;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 #[tauri::command]
 fn app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
@@ -42,9 +45,18 @@ fn profiles_save(data: Value) -> Result<(), String> {
 }
 
 fn tasklist_has(exe: &str) -> bool {
-    let out = match Command::new("tasklist")
-        .args(["/FI", &format!("IMAGENAME eq {}", exe), "/NH"])
-        .output()
+    // На Windows запуск консольных утилит из GUI может мигать отдельным окном.
+    let out = match {
+        let mut cmd = Command::new("tasklist");
+        cmd.args(["/FI", &format!("IMAGENAME eq {}", exe), "/NH"]);
+        #[cfg(target_os = "windows")]
+        {
+            // CREATE_NO_WINDOW
+            cmd.creation_flags(0x08000000);
+        }
+        cmd
+    }
+    .output()
     {
         Ok(o) => o,
         Err(_) => return false,

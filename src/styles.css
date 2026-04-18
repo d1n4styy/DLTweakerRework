@@ -157,6 +157,7 @@ html,
 body {
   margin: 0;
   height: 100%;
+  max-width: 100%;
   font-family: var(--font);
   font-size: 14px;
   color: var(--text);
@@ -260,6 +261,7 @@ html.dl-native-win-frame .main-atmosphere {
 .shell {
   display: flex;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   -webkit-app-region: no-drag;
 }
@@ -1274,18 +1276,26 @@ input[type='range'].range::-moz-range-track {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
+  max-width: 100%;
   min-height: 0;
 }
 
 .settings-layout {
   width: 100%;
-  max-width: none;
+  max-width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
   gap: 22px 28px;
   align-items: stretch;
   flex: 1;
+  min-width: 0;
   min-height: 0;
+}
+
+/* Иначе у grid по умолчанию min-width: auto — длинный контент «Что нового» раздувает окно по ширине. */
+.settings-layout > * {
+  min-width: 0;
 }
 
 @media (max-width: 880px) {
@@ -1419,7 +1429,7 @@ html[data-theme='light'] .settings-update-kicker {
   position: relative;
   box-sizing: border-box;
   width: 100%;
-  max-width: min(100%, 720px);
+  max-width: 100%;
   flex: 1;
   min-height: 0;
   min-width: 0;
@@ -1499,6 +1509,8 @@ html[data-theme='light'] .updates-changelog-item {
   color: var(--text);
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .updates-changelog-link {

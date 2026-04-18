@@ -20,8 +20,34 @@
 
 .view-settings .updates-changelog-card {
   width: 100% !important;
-  max-width: min(100%, 720px) !important;
+  max-width: 100% !important;
   align-self: stretch !important;
+}
+
+/* qp-rework-0.1.1-1: не раздувать окно по ширине из-за min-width:auto у ячеек сетки */
+html,
+body {
+  max-width: 100% !important;
+}
+
+.view-settings {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.view-settings .settings-layout {
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.view-settings .settings-layout > * {
+  min-width: 0 !important;
+}
+
+.view-settings .updates-changelog-body {
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  max-width: 100% !important;
 }
 
 .view-settings .updates-changelog-list {
