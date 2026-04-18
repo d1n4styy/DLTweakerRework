@@ -1,0 +1,279 @@
+:root {
+  --bg: #0a0a0a;
+  --bg-panel-top: #0c0c0c;
+  --card-border: #1f1f1f;
+  --card-border-soft: rgba(255, 255, 255, 0.06);
+  --text: #f2f2f2;
+  --muted: #8a8a8a;
+  --accent: #a2ff00;
+  --accent-dim: rgba(162, 255, 0, 0.14);
+  --accent-glow: rgba(162, 255, 0, 0.1);
+  --splash-edge-glow: rgba(162, 255, 0, 0.022);
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Splash: вёрстка в splash.*; размер окна — SPLASH_* в main.js / splash-preview.cjs */
+  --radius: 6px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 120% 65% at 50% -30%, var(--splash-edge-glow), transparent 50%),
+    var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  overflow: hidden;
+}
+
+.shell {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Отступ снизу только у .splash-foot — иначе лишний «пол» у рамки и артефакты у свечения */
+  padding: 5px 6px 6px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 115% 60% at 50% 0%, rgba(162, 255, 0, 0.032), transparent 48%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.02) 0%, transparent 42%),
+    linear-gradient(180deg, #0e0e0e 0%, var(--bg) 40%, #070707 100%);
+  border: 1px solid rgba(48, 48, 48, 0.95);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(0, 0, 0, 0.45);
+  margin: 0;
+  text-align: center;
+}
+
+/* Лёгкая виньетка по краям панели — не влияет на разметку */
+.shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.22);
+}
+
+.splash-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: center;
+  gap: 0;
+  text-align: center;
+  overflow: hidden;
+}
+
+.splash-hero {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.splash-foot {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* Воздух снизу только у блока текста + прогресс + спиннер (15+10 ранее) */
+  padding: 0 4px 25px;
+  text-align: center;
+  margin-top: -14px;
+}
+
+.splash-logo {
+  display: block;
+  width: 168px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  /* Явный блок — без HTML width/height у PNG не схлопывается в 0 до загрузки */
+  max-height: min(196px, 100%);
+  margin: -5px 0 0;
+  object-fit: contain;
+  object-position: center;
+  /* Чётче при даунскейле растрового PNG в Chromium */
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateY(-4px) translateZ(0);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+  animation: logo-breathe 2.8s ease-in-out infinite;
+  /* Было -3px к футеру — ослабили, чтобы чуть больше воздуха до текста; футер не трогаем */
+  margin-bottom: 0;
+}
+
+@keyframes logo-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-logo {
+    animation: none;
+  }
+}
+
+.status-line {
+  margin: 0 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  text-align: center;
+  min-height: 1.25em;
+  max-width: 100%;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+}
+
+.status-sub {
+  margin: 0 0 3px;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.015em;
+  color: var(--muted);
+  text-align: center;
+  min-height: 1.15em;
+  max-width: 100%;
+  word-break: break-word;
+  white-space: pre-line;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.progress-wrap {
+  width: 100%;
+  max-width: min(100%, 148px);
+  margin: 0 auto;
+}
+
+.progress {
+  height: 9px;
+  border-radius: 999px;
+  background: #1a1a1a;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  box-shadow: 0 0 4px var(--accent-glow);
+  transition: width 0.22s ease-out;
+}
+
+.progress.indeterminate .progress-fill {
+  width: 38%;
+  transition: none;
+  animation: indeterminate-sweep 1.05s ease-in-out infinite;
+}
+
+@keyframes indeterminate-sweep {
+  0% {
+    margin-left: 0;
+  }
+  100% {
+    margin-left: 62%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress.indeterminate .progress-fill {
+    animation: none;
+    width: 100%;
+    opacity: 0.35;
+  }
+}
+
+.spinner-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+/* Минималистичное кольцо как раньше: трек + акцент сверху, чуть «дороже» за счёт хвоста и света */
+.spinner {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 2px solid #262626;
+  border-top-color: var(--accent);
+  border-right-color: rgba(162, 255, 0, 0.16);
+  animation: spin 1.08s linear infinite;
+  /* Слабее внешнее свечение — меньше вылезает за clip окна */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border-color: #2e2e2e;
+    border-top-color: var(--muted);
+    border-right-color: #2e2e2e;
+    box-shadow: none;
+  }
+}

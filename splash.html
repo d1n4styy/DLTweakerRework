@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=220, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Запуск</title>
+    <style>
+      html {
+        color-scheme: dark;
+        height: 100%;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background-color: #0a0a0a;
+        color: #f2f2f2;
+      }
+    </style>
+    <script type="module" src="/src/splash.ts"></script>
+  </head>
+  <body>
+    <div class="shell" data-tauri-drag-region>
+      <div class="splash-inner">
+        <div class="splash-hero">
+          <img
+            class="splash-logo"
+            src="/assets/logo.png"
+            alt=""
+            decoding="async"
+            draggable="false"
+          />
+        </div>
+        <div class="splash-foot">
+          <p class="status-line" id="splash-line">Подготовка…</p>
+          <p class="status-sub" id="splash-sub"></p>
+          <div class="progress-wrap" id="splash-progress-wrap" hidden>
+            <div class="progress">
+              <div class="progress-fill" id="splash-progress-fill"></div>
+            </div>
+          </div>
+          <div class="spinner-row" aria-hidden="true">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

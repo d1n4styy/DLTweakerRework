@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Deadlock Tweaker (Rework)",
+  "version": "0.1.0",
+  "identifier": "com.dlts.deadlocktweaker.rework",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "splash",
+        "title": "Запуск",
+        "url": "splash.html",
+        "width": 220,
+        "height": 320,
+        "minWidth": 220,
+        "minHeight": 320,
+        "maxWidth": 220,
+        "maxHeight": 320,
+        "resizable": false,
+        "maximizable": false,
+        "minimizable": false,
+        "closable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "center": true,
+        "alwaysOnTop": true,
+        "visible": true,
+        "backgroundColor": "#0a0a0a"
+      },
+      {
+        "label": "main",
+        "title": "Deadlock Tweaker",
+        "url": "index.html",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 1280,
+        "minHeight": 820,
+        "resizable": true,
+        "fullscreen": false,
+        "visible": false,
+        "backgroundColor": "#0a0a0a"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRBMjdCNTI4M0RERDgyMDIKUldRQ2d0MDlLTFVuU2krSFNKMjkrRUthL2JSV1BNYnJyVjR5TEh2NzIrYkR5QVJnckN6ekM0UXgK",
+      "endpoints": [
+        "https://github.com/d1n4styy/DLTweakerRework/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

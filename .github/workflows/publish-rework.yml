@@ -1,0 +1,64 @@
+# Публикация релиза Deadlock Tweaker (Rework) для репозитория:
+# https://github.com/d1n4styy/DLTweakerRework
+#
+# Секреты репозитория (Settings → Secrets → Actions):
+#   TAURI_SIGNING_PRIVATE_KEY — содержимое ключа (или base64), см. https://v2.tauri.app/plugin/updater/
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — пароль ключа, если задан при генерации
+#
+# После первого успешного релиза в GitHub в релиз попадут установщик и latest.json;
+# клиенты подтянут их по URL из src-tauri/tauri.conf.json → plugins.updater.endpoints
+
+name: Publish DLTweakerRework
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build and upload release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: .
+          tagName: ${{ github.ref_name }}
+          releaseName: "Deadlock Tweaker (Rework) ${{ github.ref_name }}"
+          releaseBody: "Автособранный релиз: установщик Windows и latest.json для Tauri updater (см. ассеты)."
+          releaseDraft: false
+          prerelease: false
+          args: --verbose
