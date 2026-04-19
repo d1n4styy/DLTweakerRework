@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -353,22 +353,33 @@
                 </div>
               </article>
             </div>
-            <div id="visuals-shadow-compare" class="visuals-compare-popover" popover="auto">
-              <div class="visuals-compare-popover-inner">
-                <div class="visuals-compare-head">
-                  <span class="visuals-compare-title">Shadows — preview</span>
-                  <button type="button" class="tb-btn visuals-compare-close" popovertarget="visuals-shadow-compare" popovertargetaction="hide" aria-label="Close comparison">
-                    <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.2"><path d="M1 1 L9 9 M9 1 L1 9" /></svg>
+                        <div id="visuals-shadow-compare" class="visuals-compare-popover" popover="auto">
+              <div class="visuals-compare-popover-inner compare-modal">
+                <header class="compare-modal__header">
+                  <div class="compare-modal__titles">
+                    <h2 class="compare-modal__title">Shadows</h2>
+                    <p class="compare-modal__subtitle">Compare visual difference</p>
+                  </div>
+                  <button
+                    type="button"
+                    class="tb-btn visuals-compare-close compare-modal__close"
+                    popovertarget="visuals-shadow-compare"
+                    popovertargetaction="hide"
+                    aria-label="Close comparison"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+                      <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" />
+                    </svg>
                   </button>
-                </div>
+                </header>
                 <div
                   id="visuals-compare-scrub"
-                  class="visuals-scrub"
+                  class="visuals-scrub compare-modal__scrub"
                   data-compare-off="/Screens/ShadowsOFF.png"
                   data-compare-on="/Screens/ShadowsON.png"
                   style="--split: 50%"
                 >
-                  <div class="visuals-scrub__frame">
+                  <div class="visuals-scrub__frame compare-modal__frame">
                     <img
                       class="visuals-scrub__base visuals-compare-photo"
                       src="/Screens/ShadowsOFF.png"
@@ -385,12 +396,9 @@
                         fetchpriority="high"
                       />
                     </div>
-                    <div class="visuals-scrub__edge" aria-hidden="true"></div>
-                    <div class="visuals-scrub__handle" aria-hidden="true">
+                    <div class="visuals-scrub__edge compare-modal__edge" aria-hidden="true"></div>
+                    <div class="visuals-scrub__handle compare-modal__handle" aria-hidden="true">
                       <span class="visuals-scrub__grip"></span>
-                    </div>
-                    <div class="visuals-scrub__pill visuals-scrub__pill--mid" id="visuals-scrub-pill" aria-live="polite">
-                      ON · OFF
                     </div>
                     <input
                       type="range"
@@ -403,8 +411,21 @@
                       aria-label="Compare OFF and ON: drag horizontally"
                     />
                   </div>
+                  <footer class="compare-modal__footer">
+                    <div class="compare-modal__footer-meter" aria-hidden="true">
+                      <span class="compare-modal__meter-label compare-modal__meter-label--off">OFF</span>
+                      <div class="compare-modal__meter-track">
+                        <div class="compare-modal__meter-fill"></div>
+                      </div>
+                      <span class="compare-modal__meter-label compare-modal__meter-label--on">ON</span>
+                    </div>
+                    <div class="compare-modal__pill-wrap">
+                      <div class="visuals-scrub__pill visuals-scrub__pill--mid" id="visuals-scrub-pill" aria-live="polite">ON · OFF</div>
+                    </div>
+                  </footer>
                 </div>
               </div>
+            </div></div>
             </div>
           </section>
           <section class="view view-placeholder hidden" data-view-panel="gameplay">
@@ -459,41 +480,92 @@
                 <p class="sub">Версия, проверка канала и список изменений.</p>
               </div>
             </div>
-            <div class="settings-layout">
-              <div class="settings-col-left">
-                <article class="card settings-updates-card">
-                  <div class="settings-update-kicker" title="Сверка версии с каналом обновлений">
-                    <span class="settings-update-kicker-glow" aria-hidden="true"></span>
-                    <span class="settings-update-kicker-text">Проверка канала</span>
+            <div class="updates-page">
+              <article class="card updates-hero-card">
+                <div class="updates-hero-top">
+                  <span
+                    class="updates-status-badge"
+                    id="updates-status-badge"
+                    data-state="idle"
+                    role="status"
+                  >Готово к проверке</span>
+                  <div class="updates-hero-versions" id="updates-hero-versions" aria-live="polite">
+                    <span class="updates-ver-current">
+                      <span class="updates-ver-label">Текущая</span>
+                      <strong id="settings-app-version">—</strong>
+                    </span>
+                    <span class="updates-ver-arrow" id="updates-ver-arrow" hidden aria-hidden="true">→</span>
+                    <span class="updates-ver-target" id="updates-ver-target" hidden>
+                      <span class="updates-ver-label">Новая</span>
+                      <strong id="updates-target-version">—</strong>
+                    </span>
                   </div>
-                  <p class="settings-version">
-                    <span class="settings-version-label">Текущая версия</span>
-                    <strong id="settings-app-version">—</strong>
-                  </p>
-                  <div class="settings-update-actions">
-                    <button type="button" class="btn btn-ghost" id="settings-check-updates">Проверить</button>
-                    <button type="button" class="btn" id="settings-download-updates" disabled>Скачать обновление</button>
+                </div>
+                <p
+                  class="updates-hero-detail settings-update-msg"
+                  id="settings-update-msg"
+                  role="status"
+                  aria-live="polite"
+                ></p>
+                <div class="updates-download-progress" id="updates-download-progress" hidden>
+                  <div class="updates-download-progress__track">
+                    <div class="updates-download-progress__fill" id="updates-download-progress-fill"></div>
                   </div>
-                  <p class="settings-update-msg" id="settings-update-msg" role="status" aria-live="polite"></p>
-                </article>
-              </div>
-              <div class="settings-col-right">
-                <article class="card updates-changelog-card">
-                  <h2 class="card-title">Что нового</h2>
-                  <p class="updates-changelog-intro">
-                    Релизы с GitHub и локальные заметки; отдельно — журнал quick-patch из комплекта приложения.
+                  <span class="updates-download-progress__label" id="updates-download-progress-label"></span>
+                </div>
+                <div class="updates-hero-actions">
+                  <button type="button" class="btn btn-primary" id="settings-check-updates">
+                    Проверить обновления
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="settings-download-updates" disabled>
+                    Скачать и установить
+                  </button>
+                </div>
+              </article>
+
+              <section class="card updates-timeline-section" aria-labelledby="updates-timeline-heading">
+                <div class="updates-timeline-head">
+                  <h2 class="updates-timeline-title" id="updates-timeline-heading">Журнал изменений</h2>
+                  <p class="updates-timeline-sub">
+                    Релизы приложения и заметки quick-patch с GitHub (локальный комплект).
                   </p>
-                  <div class="updates-changelog-toolbar">
-                    <label class="updates-changelog-kind-label" for="updates-changelog-kind">Показать</label>
+                </div>
+                <div class="updates-timeline-toolbar" role="group" aria-label="Фильтр и тип записей">
+                  <div class="updates-filter-tabs" role="tablist" aria-label="Объём списка">
+                    <button
+                      type="button"
+                      class="updates-filter-tab is-active"
+                      id="updates-filter-all"
+                      role="tab"
+                      aria-selected="true"
+                      data-filter="all"
+                    >
+                      Все
+                    </button>
+                    <button
+                      type="button"
+                      class="updates-filter-tab"
+                      id="updates-filter-important"
+                      role="tab"
+                      aria-selected="false"
+                      data-filter="important"
+                    >
+                      Важные
+                    </button>
+                  </div>
+                  <label class="updates-kind-wrap" for="updates-changelog-kind">
+                    <span class="updates-kind-label">Тип</span>
                     <select id="updates-changelog-kind" class="select updates-changelog-select" aria-label="Тип списка">
-                      <option value="updates">Обновления (релизы)</option>
+                      <option value="updates">Релизы приложения</option>
                       <option value="quickpatch">Quick-patch</option>
                     </select>
-                  </div>
-                  <div class="updates-changelog-list" id="updates-changelog-list" role="list"></div>
-                  <p class="updates-changelog-foot" id="updates-changelog-status" aria-live="polite"></p>
-                </article>
-              </div>
+                  </label>
+                </div>
+                <div class="updates-timeline-scroll">
+                  <div id="updates-changelog-list" class="updates-changelog-list-host"></div>
+                </div>
+                <p class="updates-changelog-foot" id="updates-changelog-status" aria-live="polite"></p>
+              </section>
             </div>
           </section>
         </main>

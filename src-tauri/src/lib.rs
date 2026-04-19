@@ -68,8 +68,7 @@ fn tasklist_has(exe: &str) -> bool {
     s.contains(&exe.to_lowercase())
 }
 
-#[tauri::command]
-fn deadlock_process_status() -> Value {
+fn deadlock_process_status_value() -> Value {
     if !cfg!(target_os = "windows") {
         return serde_json::json!({"running": false, "image": null});
     }
@@ -79,6 +78,24 @@ fn deadlock_process_status() -> Value {
         }
     }
     serde_json::json!({"running": false, "image": null})
+}
+
+#[tauri::command]
+fn deadlock_process_status() -> Value {
+    deadlock_process_status_value()
+}
+
+/// Один round-trip при старте главного окна: версия, статус игры, CSS quick-patch.
+#[tauri::command]
+async fn ui_startup_snapshot() -> Value {
+    let version = env!("CARGO_PKG_VERSION").to_string();
+    let game = deadlock_process_status_value();
+    let quick_patch_css = quick_patch::quick_patch_get_css().await.unwrap_or_default();
+    serde_json::json!({
+        "version": version,
+        "game": game,
+        "quickPatchCss": quick_patch_css
+    })
 }
 
 /// Показать главное окно и закрыть сплэш (после проверки обновлений).
@@ -123,6 +140,7 @@ pub fn run() {
             profiles_load,
             profiles_save,
             deadlock_process_status,
+            ui_startup_snapshot,
             quick_patch::quick_patch_check_only,
             quick_patch::quick_patch_apply,
             quick_patch::quick_patch_get_css,

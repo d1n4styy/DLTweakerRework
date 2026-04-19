@@ -5,6 +5,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ask, message } from "@tauri-apps/plugin-dialog";
 import { fetchReleaseNotes, type ChangelogItem } from "./release-notes";
+import { renderUpdateTimeline, type UpdateTimelineDeps, type UpdateTimelineKind } from "./updates-panel";
 
 const THEME_KEY = "dl-theme";
 const VISUALS_SCRUB_POS_KEY = "dl-visuals-compare-scrub";
@@ -543,25 +544,37 @@ async function initProfiles(): Promise<void> {
   updateStatProfileName();
 }
 
+/** Сравнение скриншотов Visuals: тяжёлая проверка файлов — только при первом заходе на вкладку. */
+let visualsCompareAssetsPromise: Promise<void> | null = null;
+
+function ensureVisualsCompareAssetsLoaded(): void {
+  if (visualsCompareAssetsPromise) return;
+  visualsCompareAssetsPromise = initVisualsCompareAsset();
+}
+
 function bindNav(): void {
   const nav = document.getElementById("main-nav");
   if (!nav) return;
 
-  nav.querySelectorAll(".nav-item").forEach((btn) => {
+  const navButtons = [...nav.querySelectorAll<HTMLElement>(".nav-item")];
+  const viewPanels = [...document.querySelectorAll<HTMLElement>("[data-view-panel]")];
+
+  navButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      const view = (btn as HTMLElement).dataset.view;
+      const view = btn.dataset.view;
       if (!view) return;
 
-      nav.querySelectorAll(".nav-item").forEach((b) => b.classList.remove("active"));
+      navButtons.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
-      document.querySelectorAll("[data-view-panel]").forEach((panel) => {
-        const match = (panel as HTMLElement).dataset.viewPanel === view;
+      for (const panel of viewPanels) {
+        const match = panel.dataset.viewPanel === view;
         panel.classList.toggle("hidden", !match);
-      });
+      }
 
       if (view === "profiles") renderProfilesList();
       if (view === "settings") void loadUpdatesChangelog();
+      if (view === "visuals") ensureVisualsCompareAssetsLoaded();
     });
   });
 }
@@ -570,6 +583,8 @@ let updatesChangelogLoaded = false;
 let updatesChangelogLoading = false;
 let updatesChangelogCache: { updateItems: ChangelogItem[]; quickPatchItems: ChangelogItem[] } | null = null;
 let updatesChangelogKindBound = false;
+let updatesFilterTabsBound = false;
+let updatesTimelineFilter: "all" | "important" = "all";
 
 function formatReleaseDateRu(iso: string): string {
   if (!iso) return "";
@@ -606,6 +621,26 @@ function bindUpdatesChangelogKindOnce(): void {
   });
 }
 
+function bindUpdatesFilterTabsOnce(): void {
+  if (updatesFilterTabsBound) return;
+  const all = document.getElementById("updates-filter-all");
+  const imp = document.getElementById("updates-filter-important");
+  if (!all || !imp) return;
+  updatesFilterTabsBound = true;
+  const apply = (f: "all" | "important") => {
+    updatesTimelineFilter = f;
+    all.classList.toggle("is-active", f === "all");
+    imp.classList.toggle("is-active", f === "important");
+    all.setAttribute("aria-selected", f === "all" ? "true" : "false");
+    imp.setAttribute("aria-selected", f === "important" ? "true" : "false");
+    if (!updatesChangelogCache) return;
+    const sel = document.getElementById("updates-changelog-kind") as HTMLSelectElement | null;
+    renderUpdatesChangelogList(updatesChangelogCache, sel?.value || "updates");
+  };
+  all.addEventListener("click", () => apply("all"));
+  imp.addEventListener("click", () => apply("important"));
+}
+
 function renderUpdatesChangelogList(
   cache: { updateItems: ChangelogItem[]; quickPatchItems: ChangelogItem[] },
   kind: string,
@@ -628,49 +663,18 @@ function renderUpdatesChangelogList(
 
   statusEl.textContent = "";
 
-  arr.forEach((it) => {
-    const article = document.createElement("article");
-    article.className = "updates-changelog-item";
-    article.setAttribute("role", "listitem");
+  const tk: UpdateTimelineKind = kind === "quickpatch" ? "quickpatch" : "updates";
+  const deps: UpdateTimelineDeps = {
+    kind: tk,
+    simplifyBody: simplifyReleaseBody,
+    formatDate: formatReleaseDateRu,
+    trustedUrlPrefixes: TRUSTED_GH_RELEASE_URLS,
+    onOpenUrl: (url) => {
+      void openUrl(url);
+    },
+  };
 
-    const head = document.createElement("div");
-    head.className = "updates-changelog-head";
-
-    const h = document.createElement("h3");
-    h.className = "updates-changelog-title";
-    const title = (it.name && String(it.name).trim()) || (it.tag && String(it.tag).trim()) || "Запись";
-    h.textContent = title;
-
-    const meta = document.createElement("p");
-    meta.className = "updates-changelog-meta";
-    const parts = [it.tag && String(it.tag).trim(), formatReleaseDateRu(it.publishedAt)].filter(Boolean);
-    meta.textContent = parts.join(" · ");
-
-    head.append(h, meta);
-
-    const body = document.createElement("p");
-    body.className = "updates-changelog-body";
-    const btxt = simplifyReleaseBody(it.body);
-    body.textContent = btxt || "Нет описания.";
-
-    article.append(head, body);
-
-    if (it.url && TRUSTED_GH_RELEASE_URLS.some((p) => it.url.startsWith(p))) {
-      const row = document.createElement("div");
-      row.className = "updates-changelog-link";
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "btn btn-ghost btn-sm";
-      b.textContent = kind === "quickpatch" ? "Папка quick-patch на GitHub" : "Открыть на GitHub";
-      b.addEventListener("click", () => {
-        void openUrl(it.url);
-      });
-      row.append(b);
-      article.append(row);
-    }
-
-    listEl.append(article);
-  });
+  renderUpdateTimeline(listEl, arr, updatesTimelineFilter, deps);
 }
 
 async function loadUpdatesChangelog(): Promise<void> {
@@ -696,6 +700,7 @@ async function loadUpdatesChangelog(): Promise<void> {
     updatesChangelogCache = { updateItems: res.items, quickPatchItems: res.quickPatchItems };
 
     bindUpdatesChangelogKindOnce();
+    bindUpdatesFilterTabsOnce();
     const kind = sel && sel.value ? sel.value : "updates";
     renderUpdatesChangelogList(updatesChangelogCache, kind);
 
@@ -807,11 +812,27 @@ async function refreshGameStatus(): Promise<void> {
   }
 }
 
-function startGameStatusPolling(): void {
-  void refreshGameStatus();
-  window.setInterval(() => {
-    void refreshGameStatus();
-  }, 2800);
+function startGameStatusPolling(opts?: { skipImmediate?: boolean }): void {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const intervalMs = () => (document.hidden ? 30_000 : 2800);
+
+  const schedule = () => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    timer = window.setTimeout(() => {
+      timer = null;
+      void refreshGameStatus().finally(schedule);
+    }, intervalMs());
+  };
+
+  document.addEventListener("visibilitychange", () => {
+    schedule();
+  });
+
+  if (!opts?.skipImmediate) void refreshGameStatus();
+  schedule();
 }
 
 function applyTheme(isLight: boolean): void {
@@ -967,8 +988,20 @@ function bindVisualsCompareScrubber(): void {
   scrubRange.value = String(stored);
   applyPct(stored);
 
-  scrubRange.addEventListener("input", () => applyPct(scrubRange.value));
+  let scrubRaf = 0;
+  scrubRange.addEventListener("input", () => {
+    if (scrubRaf) return;
+    scrubRaf = window.requestAnimationFrame(() => {
+      scrubRaf = 0;
+      applyPct(scrubRange.value);
+    });
+  });
   scrubRange.addEventListener("change", () => {
+    if (scrubRaf) {
+      window.cancelAnimationFrame(scrubRaf);
+      scrubRaf = 0;
+    }
+    applyPct(scrubRange.value);
     try {
       localStorage.setItem(VISUALS_SCRUB_POS_KEY, String(Math.round(Number(scrubRange.value) * 10) / 10));
     } catch {
@@ -1039,21 +1072,53 @@ type QuickPatchInvokeResult = {
   maxV?: string;
 };
 
+type UiStartupSnapshot = {
+  version: string;
+  game: { running: boolean; image?: string | null };
+  quickPatchCss: string;
+};
+
+function applyVersionLabels(version: string | null | undefined): void {
+  const v = version && String(version).trim() ? String(version).trim() : "—";
+  const s = document.getElementById("settings-app-version");
+  if (s) s.textContent = v;
+  const i = document.getElementById("info-version-dd");
+  if (i) i.textContent = v;
+}
+
+function applyQuickPatchCssText(css: string): void {
+  const existing = document.getElementById("dl-quick-patch-css");
+  const trimmed = css.trim();
+  if (!trimmed) {
+    existing?.remove();
+    return;
+  }
+  const el = existing ?? document.createElement("style");
+  if (!existing) {
+    el.id = "dl-quick-patch-css";
+    document.head.appendChild(el);
+  }
+  el.textContent = css;
+}
+
+async function tryUiStartupSnapshot(): Promise<boolean> {
+  if (!isTauri()) return false;
+  try {
+    const snap = await invoke<UiStartupSnapshot>("ui_startup_snapshot");
+    applyVersionLabels(snap.version);
+    applyGameStatusUI({ running: Boolean(snap.game?.running), error: false });
+    applyQuickPatchCssText(snap.quickPatchCss ?? "");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function refreshQuickPatchCss(): Promise<void> {
   if (!isTauri()) return;
   try {
     const css = await invoke<string>("quick_patch_get_css");
-    const existing = document.getElementById("dl-quick-patch-css");
-    if (!css) {
-      existing?.remove();
-      return;
-    }
-    const el = existing ?? document.createElement("style");
-    if (!existing) {
-      el.id = "dl-quick-patch-css";
-      document.head.appendChild(el);
-    }
-    el.textContent = css;
+    applyQuickPatchCssText(css);
   } catch {
     /* ignore */
   }
@@ -1071,33 +1136,64 @@ function bindSettingsUpdates(): void {
   if (!verEl || !btnCheck || !btnDl || !msg) return;
   const statusMsg = msg;
 
-  if (isTauri()) {
-    void invoke<string>("app_version").then(
-      (v) => {
-        verEl.textContent = v || "—";
-      },
-      () => {
-        verEl.textContent = "—";
-      },
-    );
-  } else {
-    verEl.textContent = "—";
-  }
+  const badge = document.getElementById("updates-status-badge");
+  const arrow = document.getElementById("updates-ver-arrow");
+  const targetWrap = document.getElementById("updates-ver-target");
+  const targetStrong = document.getElementById("updates-target-version");
+  const progressRoot = document.getElementById("updates-download-progress");
+  const progressFill = document.getElementById("updates-download-progress-fill");
+  const progressLabel = document.getElementById("updates-download-progress-label");
 
   let pendingAppUpdate: Update | null = null;
   let pendingUpdateKind: "none" | "nsis" | "qp" = "none";
 
+  type HeroState = "idle" | "checking" | "uptodate" | "available" | "qp" | "error" | "downloading";
+
+  function resetDownloadProgress(): void {
+    if (progressFill) progressFill.style.width = "0%";
+    if (progressLabel) progressLabel.textContent = "";
+    if (progressRoot) progressRoot.hidden = true;
+  }
+
+  function showDownloadProgress(on: boolean): void {
+    if (progressRoot) progressRoot.hidden = !on;
+  }
+
+  function syncUpdatesHero(state: HeroState, targetVersion?: string | null): void {
+    if (!badge) return;
+    badge.dataset.state = state;
+    const labels: Record<HeroState, string> = {
+      idle: "Готово к проверке",
+      checking: "Проверка канала…",
+      uptodate: "Установлена последняя версия",
+      available: "Доступно обновление приложения",
+      qp: "Доступен quick-patch",
+      error: "Ошибка проверки",
+      downloading: "Загрузка и установка…",
+    };
+    badge.textContent = labels[state];
+    if (state === "downloading") return;
+    const showTarget = state === "available" && Boolean(targetVersion);
+    if (arrow) arrow.hidden = !showTarget;
+    if (targetWrap) targetWrap.hidden = !showTarget;
+    if (targetStrong && targetVersion) targetStrong.textContent = targetVersion;
+  }
+
   function setMsg(text: string, tone: "" | "ok" | "warn" | "err"): void {
     statusMsg.textContent = text;
-    statusMsg.className = "settings-update-msg";
+    statusMsg.className = "updates-hero-detail settings-update-msg";
     if (tone === "ok") statusMsg.classList.add("is-ok");
     else if (tone === "warn") statusMsg.classList.add("is-warn");
     else if (tone === "err") statusMsg.classList.add("is-error");
   }
 
+  syncUpdatesHero("idle");
+
   btnCheck.addEventListener("click", async () => {
     pendingAppUpdate = null;
     pendingUpdateKind = "none";
+    resetDownloadProgress();
+    syncUpdatesHero("checking");
     setMsg("Проверка…", "");
     btnCheck.disabled = true;
     btnDl.disabled = true;
@@ -1155,13 +1251,25 @@ function bindSettingsUpdates(): void {
         } else if (rQp && rQp.ok === false) {
           tone = "warn";
         }
+
+        if (pendingUpdateKind === "nsis" && pendingAppUpdate) {
+          syncUpdatesHero("available", pendingAppUpdate.version);
+        } else if (pendingUpdateKind === "qp") {
+          syncUpdatesHero("qp");
+        } else if (parts.some((p) => p.includes("ошибка"))) {
+          syncUpdatesHero("error");
+        } else {
+          syncUpdatesHero("uptodate");
+        }
         setMsg(parts.join(" "), tone);
       } else {
         parts.push("Проверка обновлений доступна только в десктопной сборке Tauri.");
         btnDl.disabled = true;
+        syncUpdatesHero("idle");
         setMsg(parts.join(" "), "warn");
       }
     } catch (e) {
+      syncUpdatesHero("error");
       setMsg(e instanceof Error ? e.message : "Ошибка", "err");
       btnDl.disabled = true;
       pendingUpdateKind = "none";
@@ -1174,13 +1282,36 @@ function bindSettingsUpdates(): void {
 
     if (pendingUpdateKind === "nsis" && pendingAppUpdate) {
       setMsg("Скачивание и установка…", "");
+      showDownloadProgress(true);
+      syncUpdatesHero("downloading");
       btnDl.disabled = true;
       btnCheck.disabled = true;
+      let downloaded = 0;
+      let total = 0;
       try {
-        await pendingAppUpdate.downloadAndInstall();
+        await pendingAppUpdate.downloadAndInstall((ev) => {
+          if (ev.event === "Started") {
+            downloaded = 0;
+            total = ev.data.contentLength ?? 0;
+            if (progressLabel) progressLabel.textContent = "Загрузка…";
+          } else if (ev.event === "Progress") {
+            downloaded += ev.data.chunkLength;
+            if (total > 0 && progressFill) {
+              const pct = Math.min(100, Math.round((downloaded / total) * 100));
+              progressFill.style.width = `${pct}%`;
+              if (progressLabel) progressLabel.textContent = `${pct}%`;
+            }
+          } else if (ev.event === "Finished") {
+            if (progressFill) progressFill.style.width = "100%";
+            if (progressLabel) progressLabel.textContent = "Установка…";
+          }
+        });
         setMsg("Перезапуск…", "ok");
         await relaunch();
       } catch (e) {
+        resetDownloadProgress();
+        if (pendingAppUpdate) syncUpdatesHero("available", pendingAppUpdate.version);
+        else syncUpdatesHero("uptodate");
         setMsg(e instanceof Error ? e.message : "Ошибка установки", "err");
         btnDl.disabled = false;
       } finally {
@@ -1221,16 +1352,6 @@ function bindSettingsUpdates(): void {
   });
 }
 
-async function initAppVersionLabels(): Promise<void> {
-  const infoDd = document.getElementById("info-version-dd");
-  if (!infoDd || !isTauri()) return;
-  try {
-    infoDd.textContent = await invoke<string>("app_version");
-  } catch {
-    infoDd.textContent = "—";
-  }
-}
-
 function applyNativeWindowFrameClass(): void {
   if (typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent)) {
     document.documentElement.classList.add("dl-native-win-frame");
@@ -1251,16 +1372,28 @@ export async function initDeadlockApp(): Promise<void> {
   bindRangeRows();
   bindNav();
   bindQuickActions();
-  void initVisualsCompareAsset();
   bindVisualsCompareScrubber();
-  void initQuickPatchStyles();
+
+  const snapshotOk = await tryUiStartupSnapshot();
+  if (!snapshotOk) {
+    if (isTauri()) {
+      void refreshGameStatus();
+      void initQuickPatchStyles();
+      void invoke<string>("app_version").then(
+        (v) => applyVersionLabels(v),
+        () => applyVersionLabels(null),
+      );
+    } else {
+      applyVersionLabels(null);
+    }
+  }
+  startGameStatusPolling({ skipImmediate: snapshotOk });
+
   bindSettingsUpdates();
-  startGameStatusPolling();
 
   await initProfiles();
   bindProfileSelect();
   bindProfileToolbar();
   bindDashboardAutosave();
   touchStatUpdated();
-  void initAppVersionLabels();
 }

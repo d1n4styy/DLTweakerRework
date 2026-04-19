@@ -7,24 +7,9 @@
   display: none !important;
 }
 
-.settings-updates-card .settings-update-msg {
-  margin-bottom: 0;
-}
-
 /* qp-1.0.24.2-1 */
 
-/* qp-rework-0.1.0-2: «Что нового» — одинаковая ширина/высота списка при переключении релизы ↔ quick-patch */
-.view-settings .settings-col-right {
-  align-items: stretch !important;
-}
-
-.view-settings .updates-changelog-card {
-  width: 100% !important;
-  max-width: 100% !important;
-  align-self: stretch !important;
-}
-
-/* qp-rework-0.1.1-1: не раздувать окно по ширине из-за min-width:auto у ячеек сетки */
+/* Экран «Обновления»: не раздувать окно по ширине */
 html,
 body {
   max-width: 100% !important;
@@ -35,53 +20,11 @@ body {
   max-width: 100% !important;
 }
 
-.view-settings .settings-layout {
+.view-settings .updates-page {
   max-width: 100% !important;
   min-width: 0 !important;
 }
 
-.view-settings .settings-layout > * {
-  min-width: 0 !important;
+.view-settings .updates-timeline-scroll {
+  max-width: min(720px, 100%) !important;
 }
-
-.view-settings .updates-changelog-body {
-  overflow-wrap: anywhere !important;
-  word-break: break-word !important;
-  max-width: 100% !important;
-}
-
-.view-settings .updates-changelog-list {
-  flex: 0 0 auto !important;
-  height: min(400px, 46vh) !important;
-  min-height: min(400px, 46vh) !important;
-  max-height: min(400px, 46vh) !important;
-}
-
-/* qp-rework-0.1.1-2: «Что нового» — на всю ширину правой колонки, выпадающий список к правому краю карточки */
-.view-settings .settings-layout {
-  grid-template-columns: minmax(0, 320px) minmax(0, 1fr) !important;
-  justify-items: stretch !important;
-  align-items: start !important;
-}
-
-.view-settings .settings-col-left {
-  justify-self: start !important;
-}
-
-.view-settings .settings-col-right {
-  justify-self: stretch !important;
-  width: 100% !important;
-}
-
-.view-settings .updates-changelog-toolbar {
-  justify-content: space-between !important;
-}
-
-.view-settings .select.updates-changelog-select {
-  margin-left: auto !important;
-}
-
-.view-settings .updates-changelog-card {
-  border-right: 1px solid var(--card-border) !important;
-}
-

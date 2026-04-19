@@ -26,6 +26,7 @@ export default defineConfig(async () => ({
     },
   },
   build: {
+    target: "es2022",
     rollupOptions: {
       input: {
         main: path.resolve(root, "index.html"),
