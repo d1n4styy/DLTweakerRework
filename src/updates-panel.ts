@@ -40,15 +40,37 @@ function createUpdateTimelineItem(
   const card = document.createElement("div");
   card.className = "updates-timeline-card";
 
-  const title = (it.name && String(it.name).trim()) || (it.tag && String(it.tag).trim()) || "Запись";
+  const tag = it.tag ? String(it.tag).trim() : "";
+  const name = it.name ? String(it.name).trim() : "";
+  // Если name содержит сам tag («… v0.1.5»), показываем только tag; иначе — name
+  const title = name && tag && name.includes(tag) ? tag : (name || tag || "Запись");
+
+  const head = document.createElement("div");
+  head.className = "updates-timeline-head-row";
+
   const h = document.createElement("h3");
   h.className = "updates-timeline-version";
   h.textContent = title;
+  head.append(h);
+
+  if (isLatest) {
+    const badge = document.createElement("span");
+    badge.className = "updates-timeline-badge";
+    badge.textContent = deps.kind === "quickpatch" ? "ACTIVE" : "NEW";
+    head.append(badge);
+  }
+
+  if (tag && title !== tag) {
+    const pill = document.createElement("span");
+    pill.className = "updates-timeline-tag";
+    pill.textContent = tag;
+    head.append(pill);
+  }
 
   const meta = document.createElement("p");
   meta.className = "updates-timeline-date";
-  const parts = [it.tag && String(it.tag).trim(), deps.formatDate(it.publishedAt)].filter(Boolean);
-  meta.textContent = parts.join(" · ");
+  const dateText = deps.formatDate(it.publishedAt);
+  meta.textContent = dateText || (tag && title === tag ? "" : tag);
 
   const btxt = deps.simplifyBody(it.body);
   const lines = bodyToBulletLines(btxt);
@@ -71,7 +93,7 @@ function createUpdateTimelineItem(
     bodyWrap.append(ul);
   }
 
-  card.append(h, meta, bodyWrap);
+  card.append(head, meta, bodyWrap);
 
   if (it.url && deps.trustedUrlPrefixes.some((p) => it.url.startsWith(p))) {
     const row = document.createElement("div");

@@ -807,7 +807,7 @@ dependencies = [
 
 [[package]]
 name = "dltweakerrework"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "dirs",
  "reqwest 0.12.28",
@@ -821,6 +821,7 @@ dependencies = [
  "tauri-plugin-process",
  "tauri-plugin-updater",
  "tokio",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

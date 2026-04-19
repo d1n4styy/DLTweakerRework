@@ -6,8 +6,8 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { ask, message } from "@tauri-apps/plugin-dialog";
 import { fetchReleaseNotes, type ChangelogItem } from "./release-notes";
 import { renderUpdateTimeline, type UpdateTimelineDeps, type UpdateTimelineKind } from "./updates-panel";
+import { applyAll as applyI18n, getLang, onLangChange, setLang, t, type Lang } from "./i18n";
 
-const THEME_KEY = "dl-theme";
 const VISUALS_SCRUB_POS_KEY = "dl-visuals-compare-scrub";
 const TRUSTED_GH_RELEASE_URLS = ["https://github.com/d1n4styy/DLTweakerRework"];
 
@@ -107,7 +107,6 @@ function collectDashboardSettings(): Record<string, unknown> {
     r.querySelectorAll<HTMLElement>("[data-setting]").forEach((el) => {
       const key = el.dataset.setting;
       if (!key) return;
-      if (el.classList.contains("js-theme-toggle")) return;
       if (el instanceof HTMLInputElement && el.type === "checkbox") out[key] = el.checked;
       else if (el instanceof HTMLSelectElement) out[key] = el.value;
       else if (el instanceof HTMLInputElement && el.type === "color") out[key] = el.value;
@@ -145,7 +144,6 @@ function applyDashboardSettings(settings: Record<string, unknown>): void {
       r.querySelectorAll<HTMLElement>("[data-setting]").forEach((el) => {
         const key = el.dataset.setting;
         if (!key || settings[key] === undefined) return;
-        if (el.classList.contains("js-theme-toggle")) return;
         if (el instanceof HTMLInputElement && el.type === "checkbox") {
           el.checked = Boolean(settings[key]);
         } else if (el instanceof HTMLSelectElement) {
@@ -612,13 +610,170 @@ function simplifyReleaseBody(raw: string | null | undefined): string {
 
 function bindUpdatesChangelogKindOnce(): void {
   if (updatesChangelogKindBound) return;
-  const sel = document.getElementById("updates-changelog-kind");
+  const sel = document.getElementById("updates-changelog-kind") as HTMLSelectElement | null;
   if (!sel) return;
   updatesChangelogKindBound = true;
   sel.addEventListener("change", () => {
     if (!updatesChangelogCache) return;
-    renderUpdatesChangelogList(updatesChangelogCache, (sel as HTMLSelectElement).value);
+    renderUpdatesChangelogList(updatesChangelogCache, sel.value);
   });
+  enhanceCustomSelect(sel);
+}
+
+/**
+ * Превращает <select> в кастомный визуальный selector (подменяет UI, но native <select>
+ * остаётся в DOM как «model»: значение/события сохраняются — внешний код продолжает работать).
+ */
+function enhanceCustomSelect(native: HTMLSelectElement): void {
+  if (native.dataset.csReady === "1") return;
+  native.dataset.csReady = "1";
+
+  const wrap = document.createElement("div");
+  wrap.className = "cs-wrap";
+  wrap.dataset.for = native.id || "";
+  // Перенос модификаторов размера: .full / .grow / .updates-changelog-select
+  if (native.classList.contains("full")) wrap.classList.add("cs-wrap--full");
+  if (native.classList.contains("grow")) wrap.classList.add("cs-wrap--grow");
+  if (native.classList.contains("updates-changelog-select")) wrap.classList.add("cs-wrap--updates");
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "cs-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+  if (native.id) trigger.id = native.id + "-trigger";
+
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "cs-label";
+  trigger.append(labelSpan);
+
+  const caret = document.createElement("span");
+  caret.className = "cs-caret";
+  caret.setAttribute("aria-hidden", "true");
+  trigger.append(caret);
+
+  const menu = document.createElement("ul");
+  menu.className = "cs-menu";
+  menu.setAttribute("role", "listbox");
+  menu.tabIndex = -1;
+  menu.hidden = true;
+
+  let optionEls: HTMLLIElement[] = [];
+  const buildMenu = () => {
+    menu.textContent = "";
+    optionEls = [];
+    for (const opt of Array.from(native.options)) {
+      const li = document.createElement("li");
+      li.className = "cs-option";
+      li.setAttribute("role", "option");
+      li.dataset.value = opt.value;
+      li.textContent = opt.textContent || opt.value;
+      if (opt.disabled) li.setAttribute("aria-disabled", "true");
+      if (opt.value === native.value) li.classList.add("is-selected");
+      li.addEventListener("click", () => {
+        if (opt.disabled) return;
+        if (native.value !== opt.value) {
+          native.value = opt.value;
+          native.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        syncFromNative();
+        close();
+        trigger.focus();
+      });
+      menu.append(li);
+      optionEls.push(li);
+    }
+  };
+
+  const syncFromNative = () => {
+    const cur = native.options[native.selectedIndex];
+    labelSpan.textContent = cur ? (cur.textContent || cur.value) : "";
+    optionEls.forEach((li) => {
+      li.classList.toggle("is-selected", li.dataset.value === native.value);
+    });
+  };
+
+  // Слежение за внешними изменениями options (renderProfileSelect и т.п.)
+  const mo = new MutationObserver(() => {
+    buildMenu();
+    syncFromNative();
+  });
+  mo.observe(native, { childList: true, subtree: true, attributes: true, attributeFilter: ["value", "selected"] });
+
+  let isOpen = false;
+  const open = () => {
+    if (isOpen) return;
+    isOpen = true;
+    menu.hidden = false;
+    wrap.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+    const sel = menu.querySelector<HTMLLIElement>(".cs-option.is-selected") || optionEls[0];
+    sel?.focus?.();
+    document.addEventListener("mousedown", onDocDown, true);
+    document.addEventListener("keydown", onKey, true);
+  };
+  const close = () => {
+    if (!isOpen) return;
+    isOpen = false;
+    menu.hidden = true;
+    wrap.classList.remove("is-open");
+    trigger.setAttribute("aria-expanded", "false");
+    document.removeEventListener("mousedown", onDocDown, true);
+    document.removeEventListener("keydown", onKey, true);
+  };
+
+  function onDocDown(e: MouseEvent): void {
+    if (!wrap.contains(e.target as Node)) close();
+  }
+
+  function onKey(e: KeyboardEvent): void {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      close();
+      trigger.focus();
+      return;
+    }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const idx = optionEls.findIndex((li) => li.dataset.value === native.value);
+      const dir = e.key === "ArrowDown" ? 1 : -1;
+      const next = optionEls[(idx + dir + optionEls.length) % optionEls.length];
+      if (next) {
+        next.click();
+      }
+      return;
+    }
+    if (e.key === "Enter" || e.key === " ") {
+      const el = document.activeElement as HTMLElement | null;
+      if (el && el.classList.contains("cs-option")) {
+        e.preventDefault();
+        el.click();
+      }
+    }
+  }
+
+  trigger.addEventListener("click", () => (isOpen ? close() : open()));
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      open();
+    }
+  });
+
+  // Внешние изменения native.value (на всякий случай — синхронизируемся)
+  native.addEventListener("change", syncFromNative);
+
+  // Скрываем native, не убирая его из DOM (иначе сломается state и существующие listeners)
+  native.classList.add("cs-native");
+  native.tabIndex = -1;
+  native.setAttribute("aria-hidden", "true");
+
+  // Вставляем wrapper рядом с native
+  native.parentNode?.insertBefore(wrap, native);
+  wrap.append(trigger, menu, native);
+
+  buildMenu();
+  syncFromNative();
 }
 
 function bindUpdatesFilterTabsOnce(): void {
@@ -656,8 +811,7 @@ function renderUpdatesChangelogList(
   statusEl.className = "updates-changelog-foot";
 
   if (arr.length === 0) {
-    statusEl.textContent =
-      kind === "quickpatch" ? "Нет записей quick-patch в комплекте приложения." : "Пока нет опубликованных релизов.";
+    statusEl.textContent = kind === "quickpatch" ? t("updates.foot.emptyQuickpatch") : t("updates.foot.emptyReleases");
     return;
   }
 
@@ -685,14 +839,14 @@ async function loadUpdatesChangelog(): Promise<void> {
   if (updatesChangelogLoading || updatesChangelogLoaded) return;
 
   updatesChangelogLoading = true;
-  statusEl.textContent = "Загрузка списка…";
+  statusEl.textContent = t("updates.foot.loading");
   statusEl.className = "updates-changelog-foot";
 
   try {
     const res = await fetchReleaseNotes();
     if (!res.ok) {
       statusEl.classList.add("is-error");
-      statusEl.textContent = res.message || "Не удалось загрузить релизы";
+      statusEl.textContent = res.message || t("updates.foot.fetchFail");
       updatesChangelogLoading = false;
       return;
     }
@@ -760,9 +914,14 @@ function bindTitlebarTauri(): void {
   });
 }
 
+type GameStatusState = "running" | "notRunning" | "error";
+
+let lastGameStatusState: GameStatusState = "error";
+
 function applyGameStatusUI(status: { running?: boolean; error?: boolean }): void {
   const running = Boolean(status?.running);
   const err = Boolean(status?.error);
+  lastGameStatusState = err ? "error" : running ? "running" : "notRunning";
   const dot = document.getElementById("game-detect-dot");
   const headLabel = document.getElementById("game-detect-head-label");
   const pill = document.getElementById("game-status-pill");
@@ -773,19 +932,23 @@ function applyGameStatusUI(status: { running?: boolean; error?: boolean }): void
   if (dot) dot.classList.toggle("dot-on", running);
 
   if (headLabel) {
-    if (err) headLabel.textContent = "Status unknown";
-    else headLabel.textContent = running ? "Game detected" : "Game not running";
+    headLabel.textContent =
+      lastGameStatusState === "error"
+        ? t("game.checking")
+        : running
+          ? t("sidebar.gameDetected")
+          : t("game.notRunning");
   }
 
   if (pill) {
-    if (err) pill.textContent = "—";
-    else pill.textContent = running ? "Running" : "Not running";
+    pill.textContent =
+      lastGameStatusState === "error" ? "—" : running ? t("game.running") : t("game.notRunning");
     pill.classList.toggle("game-status-pill--off", !running || err);
   }
 
   if (statLabel) {
-    if (err) statLabel.textContent = "Unknown";
-    else statLabel.textContent = running ? "Running" : "Not running";
+    statLabel.textContent =
+      lastGameStatusState === "error" ? "—" : running ? t("game.running") : t("game.notRunning");
   }
 
   if (statWrap) {
@@ -835,39 +998,6 @@ function startGameStatusPolling(opts?: { skipImmediate?: boolean }): void {
   schedule();
 }
 
-function applyTheme(isLight: boolean): void {
-  const root = document.documentElement;
-  if (isLight) root.setAttribute("data-theme", "light");
-  else root.removeAttribute("data-theme");
-  try {
-    localStorage.setItem(THEME_KEY, isLight ? "light" : "dark");
-  } catch {
-    /* ignore */
-  }
-}
-
-function syncThemeToggles(isLight: boolean): void {
-  document.querySelectorAll(".js-theme-toggle").forEach((el) => {
-    (el as HTMLInputElement).checked = isLight;
-  });
-}
-
-function initTheme(): void {
-  const stored = localStorage.getItem(THEME_KEY);
-  const isLight = stored === "light";
-  applyTheme(isLight);
-  syncThemeToggles(isLight);
-}
-
-function bindThemeToggle(): void {
-  document.querySelectorAll(".js-theme-toggle").forEach((toggle) => {
-    toggle.addEventListener("change", () => {
-      const on = (toggle as HTMLInputElement).checked;
-      applyTheme(on);
-      syncThemeToggles(on);
-    });
-  });
-}
 
 function hiDpiVariantPath(baseSrc: string): string {
   const i = baseSrc.lastIndexOf(".");
@@ -917,8 +1047,9 @@ async function applyVisualsCompareSrcFromDataset(): Promise<void> {
   const on = await resolveExistingImage([...expandCompareCandidates(onRequested), off || FALLBACK_COMPARE]);
   const base = root.querySelector<HTMLImageElement>(".visuals-scrub__base");
   const top = root.querySelector<HTMLImageElement>(".visuals-scrub__top");
-  if (base && off) base.src = off;
-  if (top && on) top.src = on;
+  // Compare layout: слева — ON (base), справа — OFF (top, отрисовывается поверх правее --split)
+  if (base && on) base.src = on;
+  if (top && off) top.src = off;
 }
 
 async function initVisualsCompareAsset(): Promise<void> {
@@ -953,12 +1084,13 @@ function bindVisualsCompareScrubber(): void {
 
   function setPill(n: number): void {
     if (!pill) return;
+    // Layout: слева ON, справа OFF. Меньшая позиция шва → больше OFF (top перекрывает).
     if (n < 50) {
-      pill.textContent = "ON";
-      pill.className = "visuals-scrub__pill visuals-scrub__pill--on";
-    } else if (n > 50) {
       pill.textContent = "OFF";
       pill.className = "visuals-scrub__pill visuals-scrub__pill--off";
+    } else if (n > 50) {
+      pill.textContent = "ON";
+      pill.className = "visuals-scrub__pill visuals-scrub__pill--on";
     } else {
       pill.textContent = "ON · OFF";
       pill.className = "visuals-scrub__pill visuals-scrub__pill--mid";
@@ -971,9 +1103,9 @@ function bindVisualsCompareScrubber(): void {
     setPill(n);
     const hint =
       n < 50
-        ? "Seam left of center — preview reads ON"
+        ? "Seam left of center — preview reads OFF"
         : n > 50
-          ? "Seam right of center — preview reads OFF"
+          ? "Seam right of center — preview reads ON"
           : "Seam centered";
     scrubRange.setAttribute("aria-valuetext", `${Math.round(n)}%. ${hint}`);
   }
@@ -1159,25 +1291,36 @@ function bindSettingsUpdates(): void {
     if (progressRoot) progressRoot.hidden = !on;
   }
 
+  let lastHeroState: HeroState = "idle";
+  let lastHeroTarget: string | null | undefined;
+
   function syncUpdatesHero(state: HeroState, targetVersion?: string | null): void {
     if (!badge) return;
+    lastHeroState = state;
+    lastHeroTarget = targetVersion;
     badge.dataset.state = state;
-    const labels: Record<HeroState, string> = {
-      idle: "Готово к проверке",
-      checking: "Проверка канала…",
-      uptodate: "Установлена последняя версия",
-      available: "Доступно обновление приложения",
-      qp: "Доступен quick-patch",
-      error: "Ошибка проверки",
-      downloading: "Загрузка и установка…",
+    const keys: Record<HeroState, string> = {
+      idle: "updates.statusIdle",
+      checking: "updates.statusChecking",
+      uptodate: "updates.statusUptodate",
+      available: "updates.statusAvailable",
+      qp: "updates.statusQp",
+      error: "updates.statusError",
+      downloading: "updates.statusDownloading",
     };
-    badge.textContent = labels[state];
+    badge.textContent = t(keys[state]);
     if (state === "downloading") return;
     const showTarget = state === "available" && Boolean(targetVersion);
     if (arrow) arrow.hidden = !showTarget;
     if (targetWrap) targetWrap.hidden = !showTarget;
     if (targetStrong && targetVersion) targetStrong.textContent = targetVersion;
   }
+
+  // Перерисовать badge при смене языка
+  onLangChange(() => {
+    if (!badge) return;
+    syncUpdatesHero(lastHeroState, lastHeroTarget);
+  });
 
   function setMsg(text: string, tone: "" | "ok" | "warn" | "err"): void {
     statusMsg.textContent = text;
@@ -1194,7 +1337,7 @@ function bindSettingsUpdates(): void {
     pendingUpdateKind = "none";
     resetDownloadProgress();
     syncUpdatesHero("checking");
-    setMsg("Проверка…", "");
+    setMsg(t("updates.msg.checking"), "");
     btnCheck.disabled = true;
     btnDl.disabled = true;
     try {
@@ -1263,14 +1406,14 @@ function bindSettingsUpdates(): void {
         }
         setMsg(parts.join(" "), tone);
       } else {
-        parts.push("Проверка обновлений доступна только в десктопной сборке Tauri.");
+        parts.push(t("updates.msg.restartingDesktopOnly"));
         btnDl.disabled = true;
         syncUpdatesHero("idle");
         setMsg(parts.join(" "), "warn");
       }
     } catch (e) {
       syncUpdatesHero("error");
-      setMsg(e instanceof Error ? e.message : "Ошибка", "err");
+      setMsg(e instanceof Error ? e.message : t("updates.msg.error"), "err");
       btnDl.disabled = true;
       pendingUpdateKind = "none";
     }
@@ -1281,7 +1424,7 @@ function bindSettingsUpdates(): void {
     if (!isTauri() || pendingUpdateKind === "none") return;
 
     if (pendingUpdateKind === "nsis" && pendingAppUpdate) {
-      setMsg("Скачивание и установка…", "");
+      setMsg(t("updates.msg.downloadInstall"), "");
       showDownloadProgress(true);
       syncUpdatesHero("downloading");
       btnDl.disabled = true;
@@ -1293,7 +1436,7 @@ function bindSettingsUpdates(): void {
           if (ev.event === "Started") {
             downloaded = 0;
             total = ev.data.contentLength ?? 0;
-            if (progressLabel) progressLabel.textContent = "Загрузка…";
+            if (progressLabel) progressLabel.textContent = t("updates.msg.dlProgressLabel");
           } else if (ev.event === "Progress") {
             downloaded += ev.data.chunkLength;
             if (total > 0 && progressFill) {
@@ -1303,16 +1446,16 @@ function bindSettingsUpdates(): void {
             }
           } else if (ev.event === "Finished") {
             if (progressFill) progressFill.style.width = "100%";
-            if (progressLabel) progressLabel.textContent = "Установка…";
+            if (progressLabel) progressLabel.textContent = t("updates.msg.dlInstalling");
           }
         });
-        setMsg("Перезапуск…", "ok");
+        setMsg(t("updates.msg.relaunch"), "ok");
         await relaunch();
       } catch (e) {
         resetDownloadProgress();
         if (pendingAppUpdate) syncUpdatesHero("available", pendingAppUpdate.version);
         else syncUpdatesHero("uptodate");
-        setMsg(e instanceof Error ? e.message : "Ошибка установки", "err");
+        setMsg(e instanceof Error ? e.message : t("updates.msg.installError"), "err");
         btnDl.disabled = false;
       } finally {
         btnCheck.disabled = false;
@@ -1321,29 +1464,29 @@ function bindSettingsUpdates(): void {
     }
 
     if (pendingUpdateKind === "qp") {
-      setMsg("Загрузка quick-patch…", "");
+      setMsg(t("updates.msg.qpFetching"), "");
       btnDl.disabled = true;
       btnCheck.disabled = true;
       try {
         const r = await invoke<QuickPatchInvokeResult>("quick_patch_apply", { silent: false });
         pendingUpdateKind = "none";
         if (!r || r.ok !== true) {
-          setMsg(r?.message || "Не удалось применить патч", "err");
+          setMsg(r?.message || t("updates.msg.qpApplyFail"), "err");
           btnDl.disabled = false;
         } else if (r.code === "applied") {
-          setMsg(r.message || "Патч загружен и применён.", "ok");
+          setMsg(r.message || t("updates.msg.qpAppliedDefault"), "ok");
           btnDl.disabled = true;
           await refreshQuickPatchCss();
         } else if (r.code === "uptodate" || r.code === "noop") {
-          setMsg(r.message || "Готово", "ok");
+          setMsg(r.message || t("updates.msg.done"), "ok");
           btnDl.disabled = true;
         } else {
-          setMsg(r.message || "Готово", "warn");
+          setMsg(r.message || t("updates.msg.done"), "warn");
           btnDl.disabled = false;
         }
       } catch (e) {
         pendingUpdateKind = "none";
-        setMsg(e instanceof Error ? e.message : "Ошибка", "err");
+        setMsg(e instanceof Error ? e.message : t("updates.msg.error"), "err");
         btnDl.disabled = false;
       } finally {
         btnCheck.disabled = false;
@@ -1367,8 +1510,6 @@ export async function initDeadlockApp(): Promise<void> {
     bindTitlebarTauri();
   }
 
-  initTheme();
-  bindThemeToggle();
   bindRangeRows();
   bindNav();
   bindQuickActions();
@@ -1396,4 +1537,55 @@ export async function initDeadlockApp(): Promise<void> {
   bindProfileToolbar();
   bindDashboardAutosave();
   touchStatUpdated();
+  enhanceAllSelects();
+  bindLangSwitch();
+  // При смене языка — обновить игру/options селектов и др.
+  onLangChange(() => {
+    applyI18n();
+    applyGameStatusUI({
+      running: lastGameStatusState === "running",
+      error: lastGameStatusState === "error",
+    });
+    refreshLocalizedSelectOptions();
+  });
+}
+
+function bindLangSwitch(): void {
+  const root = document.querySelector<HTMLElement>(".lang-switch");
+  if (!root) return;
+  const buttons = root.querySelectorAll<HTMLButtonElement>(".lang-switch__btn");
+  const sync = () => {
+    const cur = getLang();
+    buttons.forEach((b) => {
+      const on = b.dataset.lang === cur;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  };
+  sync();
+  buttons.forEach((b) => {
+    b.addEventListener("click", () => {
+      const lang = (b.dataset.lang as Lang) || "en";
+      setLang(lang);
+      sync();
+    });
+  });
+}
+
+/** Обновить тексты <option> в селектах, которые имеют data-i18n значения. */
+function refreshLocalizedSelectOptions(): void {
+  document.querySelectorAll<HTMLOptionElement>("option[data-i18n]").forEach((opt) => {
+    const key = opt.dataset.i18n;
+    if (key) opt.textContent = t(key);
+  });
+  // Trigger re-render of custom select menus (MutationObserver слушает атрибуты)
+  document.querySelectorAll<HTMLSelectElement>("select[data-cs-ready='1']").forEach((sel) => {
+    sel.setAttribute("data-i18n-rev", String(Date.now()));
+  });
+}
+
+/** Применить кастомный UI ко всем <select> на странице (один раз). */
+function enhanceAllSelects(): void {
+  const selects = document.querySelectorAll<HTMLSelectElement>("select");
+  selects.forEach((sel) => enhanceCustomSelect(sel));
 }

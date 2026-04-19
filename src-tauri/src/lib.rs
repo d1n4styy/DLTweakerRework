@@ -98,6 +98,72 @@ async fn ui_startup_snapshot() -> Value {
     })
 }
 
+/// Применить стилизацию системного titlebar Windows: тёмный caption / border + Mica/Acrylic.
+#[cfg(target_os = "windows")]
+fn apply_titlebar_styling<R: tauri::Runtime>(window: &tauri::WebviewWindow<R>) {
+    use tauri::Manager;
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::Graphics::Dwm::{
+        DwmSetWindowAttribute, DWMWA_BORDER_COLOR, DWMWA_CAPTION_COLOR,
+        DWMWA_SYSTEMBACKDROP_TYPE, DWMWA_TEXT_COLOR, DWMWA_USE_IMMERSIVE_DARK_MODE,
+    };
+
+    let hwnd_raw = match window.hwnd() {
+        Ok(h) => h.0 as isize,
+        Err(_) => return,
+    };
+    let hwnd = hwnd_raw as HWND;
+
+    unsafe {
+        // Иммерсивный тёмный режим: обеспечивает светлые иконки системных кнопок и тёмную рамку.
+        let dark: u32 = 1;
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_USE_IMMERSIVE_DARK_MODE as u32,
+            &dark as *const _ as *const _,
+            std::mem::size_of_val(&dark) as u32,
+        );
+
+        // Отключаем системный backdrop (Mica/Acrylic), чтобы caption color применился буквально
+        // и совпал с фоном приложения. Иначе Mica перекрашивает заголовок в свой оттенок.
+        let backdrop_type: u32 = 1; // 0 Auto, 1 None, 2 Mica, 3 Acrylic, 4 Tabbed
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_SYSTEMBACKDROP_TYPE as u32,
+            &backdrop_type as *const _ as *const _,
+            std::mem::size_of_val(&backdrop_type) as u32,
+        );
+
+        // Цвет фона титулбара = фон приложения (#0a0a0a). COLORREF: 0x00BBGGRR.
+        let caption_color: u32 = 0x000A0A0A;
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_CAPTION_COLOR as u32,
+            &caption_color as *const _ as *const _,
+            std::mem::size_of_val(&caption_color) as u32,
+        );
+
+        // Цвет текста заголовка — приглушённый светлый, под общую палитру muted.
+        // 0xFFFFFFFE — спец. значение «system default»; используем явный цвет.
+        let text_color: u32 = 0x008A8A8A; // соответствует --muted #8a8a8a (BGR == RGB при равных каналах)
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_TEXT_COLOR as u32,
+            &text_color as *const _ as *const _,
+            std::mem::size_of_val(&text_color) as u32,
+        );
+
+        // Рамка окна — едва заметная, со слегка зелёным акцентом #0d130d (BGR 0x000D130D).
+        let border_color: u32 = 0x000D130D;
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_BORDER_COLOR as u32,
+            &border_color as *const _ as *const _,
+            std::mem::size_of_val(&border_color) as u32,
+        );
+    }
+}
+
 /// Показать главное окно и закрыть сплэш (после проверки обновлений).
 #[tauri::command]
 async fn splash_open_main(app: tauri::AppHandle) -> Result<(), String> {
@@ -133,6 +199,12 @@ pub fn run() {
                     }
                 });
             }
+
+            #[cfg(target_os = "windows")]
+            if let Some(main) = app.handle().get_webview_window("main") {
+                apply_titlebar_styling(&main);
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
