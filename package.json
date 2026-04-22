@@ -8,7 +8,9 @@
     "dev:tauri": "tauri dev",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "qp:sync": "node scripts/qp-sync.mjs",
+    "qp:bump": "node scripts/qp-sync.mjs --bump"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

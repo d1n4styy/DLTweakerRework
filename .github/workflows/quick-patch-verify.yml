@@ -1,0 +1,35 @@
+name: Verify quick-patch manifest
+
+on:
+  push:
+    paths:
+      - "quick-patch/**"
+      - "scripts/qp-sync.mjs"
+      - ".github/workflows/quick-patch-verify.yml"
+  pull_request:
+    paths:
+      - "quick-patch/**"
+      - "scripts/qp-sync.mjs"
+      - ".github/workflows/quick-patch-verify.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Ensure sha256 matches asset contents
+        shell: bash
+        run: |
+          # сохраняем текущий манифест, запускаем sync, сравниваем.
+          cp quick-patch/manifest.json quick-patch/.manifest.before.json
+          node scripts/qp-sync.mjs
+          if ! diff -q quick-patch/.manifest.before.json quick-patch/manifest.json >/dev/null; then
+            echo "::error file=quick-patch/manifest.json::sha256 в манифесте не совпадает с содержимым ассетов. Запусти 'npm run qp:sync' локально и закоммить результат."
+            echo "--- diff ---"
+            diff -u quick-patch/.manifest.before.json quick-patch/manifest.json || true
+            exit 1
+          fi
+          rm quick-patch/.manifest.before.json
