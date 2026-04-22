@@ -1491,6 +1491,13 @@ function bindSettingsUpdates(): void {
     else if (tone === "err") statusMsg.classList.add("is-error");
   }
 
+  /** `qp-rework-0.1.7-3` → `0.1.7-3`. Для лейблов «Update Quick-Patch X». */
+  function formatQpShortId(id: string | null | undefined): string {
+    if (!id) return "";
+    const m = String(id).match(/^(?:[a-z]+-)*(\d[\w.\-]*)$/i);
+    return m?.[1] ?? String(id);
+  }
+
   syncUpdatesHero("idle");
 
   btnCheck.addEventListener("click", async () => {
@@ -1502,75 +1509,59 @@ function bindSettingsUpdates(): void {
     btnCheck.disabled = true;
     btnDl.disabled = true;
     try {
-      const parts: string[] = [];
       let rQp: QuickPatchInvokeResult | null = null;
+      let appErr: string | null = null;
+      let qpErr: string | null = null;
 
       if (isTauri()) {
         try {
           const update = await check();
-          if (update) {
-            pendingAppUpdate = update;
-            parts.push(`Приложение: доступна версия ${update.version}.`);
-          } else {
-            parts.push("Приложение: новой версии нет — установлена последняя опубликованная сборка.");
-          }
+          if (update) pendingAppUpdate = update;
         } catch (e) {
-          parts.push(`Приложение: ${e instanceof Error ? e.message : "ошибка проверки"}.`);
+          appErr = e instanceof Error && e.message ? e.message : t("updates.msg.appCheckFail");
         }
 
         try {
           rQp = await invoke<QuickPatchInvokeResult>("quick_patch_check_only");
           if (!rQp || rQp.ok !== true) {
-            parts.push(`Quick-patch: ${rQp?.message || "ошибка проверки"}.`);
-          } else if (rQp.code === "available") {
-            const d = rQp.description ? ` — ${rQp.description}` : "";
-            parts.push(`Quick-patch: доступен «${rQp.id ?? ""}»${d}.`);
-          } else if (rQp.code === "uptodate") {
-            parts.push("Quick-patch: уже актуален.");
-          } else if (rQp.code === "range") {
-            parts.push(rQp.message || "Quick-patch: не для этой версии приложения.");
-          } else if (rQp.code === "noop") {
-            parts.push("Quick-patch: в манифесте нет файлов для загрузки.");
-          } else {
-            parts.push(rQp.message || "Quick-patch: готово.");
+            qpErr = rQp?.message || t("updates.msg.qpCheckFail");
           }
         } catch (e) {
-          parts.push(`Quick-patch: ${e instanceof Error ? e.message : "ошибка"}.`);
+          qpErr = e instanceof Error && e.message ? e.message : t("updates.msg.qpCheckFail");
         }
 
         if (pendingAppUpdate) pendingUpdateKind = "nsis";
         else if (rQp && rQp.ok === true && rQp.code === "available") pendingUpdateKind = "qp";
 
-        if (pendingAppUpdate && rQp && rQp.ok === true && rQp.code === "available") {
-          parts.push("Сначала скачается версия приложения; quick-patch подтянется при следующем запуске.");
-        }
-
         btnDl.disabled = pendingUpdateKind === "none";
 
-        let tone: "" | "ok" | "warn" | "err" = "ok";
-        if (pendingUpdateKind !== "none") {
-          tone = "ok";
-        } else if (parts.some((p) => p.startsWith("Приложение:") && p.includes("ошибка"))) {
-          tone = rQp && rQp.ok === true && rQp.code === "available" ? "ok" : "warn";
-        } else if (rQp && rQp.ok === false) {
-          tone = "warn";
-        }
-
+        // Собираем короткое сообщение: «Update Release v0.1.8» / «Update Quick-Patch 0.1.7-3»
+        // или ошибка; если обновлений нет — короткая «You're on the latest version.».
+        let msg = "";
+        let tone: "" | "ok" | "warn" | "err" = "";
         if (pendingUpdateKind === "nsis" && pendingAppUpdate) {
+          msg = `${t("updates.msg.appAvailable")} v${pendingAppUpdate.version}`;
+          tone = "ok";
           syncUpdatesHero("available", pendingAppUpdate.version);
-        } else if (pendingUpdateKind === "qp") {
+        } else if (pendingUpdateKind === "qp" && rQp) {
+          const qpId = formatQpShortId(rQp.id);
+          msg = qpId ? `${t("updates.msg.qpAvailable")} ${qpId}` : t("updates.msg.qpAvailable");
+          tone = "ok";
           syncUpdatesHero("qp");
-        } else if (parts.some((p) => p.includes("ошибка"))) {
+        } else if (appErr || qpErr) {
+          msg = appErr || qpErr || t("updates.msg.error");
+          tone = "err";
           syncUpdatesHero("error");
         } else {
+          msg = t("updates.msg.allUpToDate");
+          tone = "";
           syncUpdatesHero("uptodate");
         }
-        setMsg(parts.join(" "), tone);
+        setMsg(msg, tone);
       } else {
-        parts.push(t("updates.msg.restartingDesktopOnly"));
         btnDl.disabled = true;
         syncUpdatesHero("idle");
-        setMsg(parts.join(" "), "warn");
+        setMsg(t("updates.msg.restartingDesktopOnly"), "warn");
       }
     } catch (e) {
       syncUpdatesHero("error");
