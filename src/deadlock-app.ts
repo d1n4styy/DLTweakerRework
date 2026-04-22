@@ -7,6 +7,7 @@ import { ask, message } from "@tauri-apps/plugin-dialog";
 import { fetchReleaseNotes, type ChangelogItem } from "./release-notes";
 import { renderUpdateTimeline, type UpdateTimelineDeps, type UpdateTimelineKind } from "./updates-panel";
 import { applyAll as applyI18n, getLang, onLangChange, setLang, t, type Lang } from "./i18n";
+import { openModManagerTab } from "./mod-manager";
 
 const VISUALS_SCRUB_POS_KEY = "dl-visuals-compare-scrub";
 const TRUSTED_GH_RELEASE_URLS = ["https://github.com/d1n4styy/DLTweakerRework"];
@@ -573,6 +574,7 @@ function bindNav(): void {
       if (view === "profiles") renderProfilesList();
       if (view === "settings") void loadUpdatesChangelog();
       if (view === "visuals") ensureVisualsCompareAssetsLoaded();
+      if (view === "mods") void openModManagerTab();
     });
   });
 }

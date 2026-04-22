@@ -80,6 +80,10 @@
               <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20V6a2 2 0 012-2h12a2 2 0 012 2v14M4 20h16M4 20l2-4h12l2 4" /><path d="M9 10h6" /></svg>
               <span data-i18n="nav.profiles">Profiles</span>
             </button>
+            <button type="button" class="nav-item" data-view="mods">
+              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2l9 4.5v11L12 22 3 17.5v-11L12 2z" /><path d="M3 6.5l9 4.5 9-4.5M12 22V11" /></svg>
+              <span data-i18n="nav.mods">Mod Manager</span>
+            </button>
             <button type="button" class="nav-item" data-view="settings">
               <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z" /><path d="M9 9h6v6H9V9z" /></svg>
               <span data-i18n="nav.updates">Updates</span>
@@ -436,6 +440,55 @@
               </article>
             </div>
           </section>
+          <section class="view view-mods hidden" data-view-panel="mods">
+            <div class="mods-page">
+              <header class="mods-page__header">
+                <div>
+                  <h1 class="mods-page__title" data-i18n="mods.title">Mod Manager</h1>
+                  <p class="sub" data-i18n="mods.sub">Browse GameBanana mods for Deadlock and manage installed ones.</p>
+                </div>
+                <div class="mods-game-chip" id="mods-game-chip" role="status" aria-live="polite">
+                  <span class="mods-game-chip__dot" aria-hidden="true"></span>
+                  <span class="mods-game-chip__label" data-i18n="mods.chipChecking">Locating Deadlock…</span>
+                </div>
+              </header>
+
+              <section class="card mods-browse" aria-labelledby="mods-browse-heading">
+                <div class="mods-browse__head">
+                  <h2 class="card-title" id="mods-browse-heading"><span data-i18n="mods.browseTitle">GameBanana</span></h2>
+                  <form class="mods-search" id="mods-search-form">
+                    <input
+                      type="search"
+                      id="mods-search-input"
+                      class="mods-search__input"
+                      autocomplete="off"
+                      placeholder="Search mods…"
+                      data-i18n-attr="placeholder:mods.searchPlaceholder"
+                    />
+                    <button type="submit" class="btn btn-primary btn-sm"><span data-i18n="mods.searchBtn">Search</span></button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="mods-search-reset"><span data-i18n="mods.searchReset">Reset</span></button>
+                  </form>
+                </div>
+                <div class="mods-grid" id="mods-grid" aria-live="polite"></div>
+                <div class="mods-pager" id="mods-pager" hidden>
+                  <button type="button" class="btn btn-ghost btn-sm" id="mods-page-prev" disabled><span data-i18n="mods.pagePrev">← Prev</span></button>
+                  <span class="mods-pager__label" id="mods-pager-label">—</span>
+                  <button type="button" class="btn btn-ghost btn-sm" id="mods-page-next" disabled><span data-i18n="mods.pageNext">Next →</span></button>
+                </div>
+                <p class="mods-foot" id="mods-status" aria-live="polite"></p>
+              </section>
+
+              <section class="card mods-installed" aria-labelledby="mods-installed-heading">
+                <div class="mods-installed__head">
+                  <h2 class="card-title" id="mods-installed-heading"><span data-i18n="mods.installedTitle">Installed mods</span></h2>
+                  <p class="mods-installed__path" id="mods-installed-path"></p>
+                </div>
+                <ul class="mods-installed__list" id="mods-installed-list" role="list"></ul>
+                <p class="mods-foot" id="mods-installed-empty" hidden data-i18n="mods.installedEmpty">No mods installed.</p>
+              </section>
+            </div>
+          </section>
+
           <section class="view view-settings hidden" data-view-panel="settings">
                         <div class="updates-page">
               <header class="updates-page__header">
@@ -567,6 +620,28 @@
           <div class="modal-actions">
             <button type="button" class="btn btn-ghost" id="modal-delete-cancel" data-i18n="modal.cancel">Отмена</button>
             <button type="button" class="btn danger-outline" id="modal-delete-confirm" data-i18n="modal.delete">Удалить</button>
+          </div>
+        </div>
+
+        <div id="modal-mod-install" class="modal-card hidden modal-card--wide" role="dialog" aria-modal="true" aria-labelledby="modal-mod-install-title">
+          <h2 id="modal-mod-install-title" class="modal-title" data-i18n="mods.installTitle">Install mod</h2>
+          <p class="modal-desc" id="modal-mod-install-desc"></p>
+          <ul class="mods-file-list" id="modal-mod-install-files" role="list"></ul>
+          <p class="modal-desc mods-install-status" id="modal-mod-install-status" aria-live="polite"></p>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="modal-mod-install-cancel" data-i18n="modal.cancel">Cancel</button>
+          </div>
+        </div>
+
+        <div id="modal-mod-remove" class="modal-card hidden" role="dialog" aria-modal="true" aria-labelledby="modal-mod-remove-title">
+          <h2 id="modal-mod-remove-title" class="modal-title" data-i18n="mods.removeTitle">Remove mod</h2>
+          <p class="modal-desc">
+            <strong class="modal-emphasis" id="modal-mod-remove-name"></strong>
+            <span data-i18n="mods.removeBody"> will be deleted from the addons folder. Uninstalled files cannot be recovered.</span>
+          </p>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="modal-mod-remove-cancel" data-i18n="modal.cancel">Cancel</button>
+            <button type="button" class="btn danger-outline" id="modal-mod-remove-confirm" data-i18n="modal.delete">Delete</button>
           </div>
         </div>
       </div>

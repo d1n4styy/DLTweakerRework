@@ -3336,3 +3336,356 @@ html.dl-native-win-frame .view-settings::before {
 .modal-card .btn {
   -webkit-app-region: no-drag;
 }
+
+/* ---- Mod Manager tab ---------------------------------------------------- */
+.view-mods:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+}
+
+.mods-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  animation: updates-page-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.mods-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mods-page__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgba(242, 242, 242, 0.92);
+}
+
+.mods-page__header .sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mods-game-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+}
+
+.mods-game-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.mods-game-chip[data-state="ok"] {
+  color: var(--accent);
+  border-color: rgba(162, 255, 0, 0.32);
+  background: rgba(162, 255, 0, 0.08);
+}
+
+.mods-game-chip[data-state="missing"] {
+  color: #ff9a9a;
+  border-color: rgba(255, 154, 154, 0.32);
+  background: rgba(255, 80, 80, 0.08);
+}
+
+.mods-browse,
+.mods-installed {
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(12, 14, 12, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.mods-browse__head,
+.mods-installed__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.mods-installed__path {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.75;
+  overflow-wrap: anywhere;
+}
+
+.mods-search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mods-search__input {
+  width: 220px;
+  max-width: 100%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.mods-search__input:focus {
+  outline: none;
+  border-color: rgba(162, 255, 0, 0.4);
+}
+
+.mods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.mod-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(20, 22, 18, 0.6);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+
+.mod-card:hover {
+  border-color: rgba(162, 255, 0, 0.28);
+  transform: translateY(-1px);
+}
+
+.mod-card__media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mod-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mod-card__media--empty::after {
+  content: "No preview";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.mod-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mod-card__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.mod-card__meta,
+.mod-card__stats {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mod-card__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.mod-card__actions .btn {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mods-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.mods-pager__label {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.mods-foot {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mods-foot.is-error {
+  color: #ff9a9a;
+}
+
+.mods-installed__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.installed-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(20, 22, 18, 0.55);
+}
+
+.installed-row.is-disabled {
+  opacity: 0.6;
+}
+
+.installed-row__media {
+  width: 56px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.installed-row__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.installed-row__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.installed-row__name {
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.installed-row__meta {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.installed-row__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.modal-card--wide {
+  max-width: 560px;
+}
+
+.mods-file-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.mods-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.mods-file-row__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mods-file-row__label strong {
+  font-size: 12.5px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.mods-file-row__sub {
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.mods-install-status {
+  margin-top: 10px;
+}
+
+.mods-install-status.is-error {
+  color: #ff9a9a;
+}

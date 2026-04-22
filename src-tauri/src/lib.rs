@@ -1,4 +1,5 @@
 mod game_config;
+mod mod_manager;
 mod quick_patch;
 
 use serde_json::Value;
@@ -221,6 +222,12 @@ pub fn run() {
             quick_patch::quick_patch_get_css,
             game_config::autoexec_status,
             game_config::autoexec_create,
+            mod_manager::mod_manager_browse,
+            mod_manager::mod_manager_mod_files,
+            mod_manager::mod_manager_install,
+            mod_manager::mod_manager_list_installed,
+            mod_manager::mod_manager_toggle,
+            mod_manager::mod_manager_remove,
             splash_open_main,
         ])
         .run(tauri::generate_context!())
