@@ -1,5 +1,5 @@
 {
-  "id": "qp-rework-0.1.1-2",
+  "id": "qp-rework-0.1.1-3",
   "minAppSemver": "0.1.0",
   "maxAppSemver": "99.99.99",
   "description": "«Что нового»: карточка на всю ширину правой колонки; сетка 320px + 1fr; выпадающий список прижат к правому краю панели.",
@@ -7,7 +7,7 @@
     {
       "path": "overlay.css",
       "url": "https://raw.githubusercontent.com/d1n4styy/DLTweakerRework/main/quick-patch/overlay.css",
-      "sha256": "0897bcefc46336669acbe2eb587e9e6723030fe5c104dfad2d01d80a69b20fec"
+      "sha256": "2139c9a00d5fa86b713f073a108dd0bf96505f351397aa4b082424fb2cd5edec"
     }
   ]
 }
