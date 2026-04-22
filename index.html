@@ -130,9 +130,9 @@
                   <span id="stat-game-label" data-i18n="game.checking">Checking…</span>
                 </span>
               </div>
-              <div class="stat-card">
-                <span class="stat-label" data-i18n="stat.protection">Protection</span>
-                <span class="stat-value stat-ok" data-i18n="stat.protectionEnabled">Enabled</span>
+              <div class="stat-card" id="stat-card-autoexec" title="autoexec.cfg in Deadlock/game/citadel/cfg">
+                <span class="stat-label" data-i18n="stat.findConfig">Find Config</span>
+                <span class="stat-value stat-idle" id="stat-autoexec-value" data-i18n="stat.configChecking">Checking…</span>
               </div>
               <div class="stat-card">
                 <span class="stat-label" data-i18n="stat.lastUpdated">Last Updated</span>
@@ -231,6 +231,14 @@
                   </button>
                   <button type="button" class="btn btn-block danger-outline">
                     <span class="btn-ico">⟲</span> <span data-i18n="btn.resetAllSettings">Reset All Settings</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-block btn-create-config"
+                    id="btn-create-autoexec"
+                    hidden
+                  >
+                    <span class="btn-ico">＋</span> <span data-i18n="btn.createConfig">Create autoexec.cfg</span>
                   </button>
                 </div>
               </article>
@@ -472,43 +480,65 @@
                 </div>
               </article>
 
-              <section class="card updates-timeline-section" aria-labelledby="updates-timeline-heading">
-                <div class="updates-timeline-head">
-                  <h2 class="updates-timeline-title" id="updates-timeline-heading"><span data-i18n="updates.timelineTitle">Changelog</span></h2>
-                  <p class="updates-timeline-sub"><span data-i18n="updates.timelineSub">App releases and Quick-patch entries from GitHub.</span></p>
-                </div>
-                <div class="updates-timeline-toolbar" role="group" aria-label="Фильтр и тип записей">
-                  <div class="updates-filter-tabs" role="tablist" aria-label="Объём списка">
-                    <button
-                      type="button"
-                      class="updates-filter-tab is-active"
-                      id="updates-filter-all"
-                      role="tab"
-                      aria-selected="true"
-                      data-filter="all"
-                    ><span data-i18n="updates.filterAll">All</span></button>
-                    <button
-                      type="button"
-                      class="updates-filter-tab"
-                      id="updates-filter-important"
-                      role="tab"
-                      aria-selected="false"
-                      data-filter="important"
-                    ><span data-i18n="updates.filterImportant">Important</span></button>
+              <div class="updates-timeline-grid">
+                <section class="card updates-timeline-section" data-kind="updates" aria-labelledby="updates-releases-heading">
+                  <div class="updates-timeline-head">
+                    <h2 class="updates-timeline-title" id="updates-releases-heading"><span data-i18n="updates.timelineTitle">Changelog</span></h2>
+                    <p class="updates-timeline-sub"><span data-i18n="updates.releasesSub">App releases from GitHub (local copy in bundle).</span></p>
                   </div>
-                  <label class="updates-kind-wrap" for="updates-changelog-kind">
-                    <span class="updates-kind-label" data-i18n="updates.kindLabel">Type</span>
-                    <select id="updates-changelog-kind" class="select updates-changelog-select" aria-label="Тип списка">
-                      <option value="updates" data-i18n="updates.kindReleases">App releases</option>
-                      <option value="quickpatch" data-i18n="updates.kindQuickpatch">Quick-patch</option>
-                    </select>
-                  </label>
-                </div>
-                <div class="updates-timeline-scroll">
-                  <div id="updates-changelog-list" class="updates-changelog-list-host"></div>
-                </div>
-                <p class="updates-changelog-foot" id="updates-changelog-status" aria-live="polite"></p>
-              </section>
+                  <div class="updates-timeline-toolbar" role="group" aria-label="Фильтр релизов">
+                    <div class="updates-filter-tabs" role="tablist" data-filter-group="updates" aria-label="Объём списка релизов">
+                      <button
+                        type="button"
+                        class="updates-filter-tab is-active"
+                        role="tab"
+                        aria-selected="true"
+                        data-filter="all"
+                      ><span data-i18n="updates.filterAll">All</span></button>
+                      <button
+                        type="button"
+                        class="updates-filter-tab"
+                        role="tab"
+                        aria-selected="false"
+                        data-filter="important"
+                      ><span data-i18n="updates.filterImportant">Important</span></button>
+                    </div>
+                  </div>
+                  <div class="updates-timeline-scroll">
+                    <div id="updates-releases-list" class="updates-changelog-list-host"></div>
+                  </div>
+                  <p class="updates-changelog-foot" id="updates-releases-status" aria-live="polite"></p>
+                </section>
+
+                <section class="card updates-timeline-section" data-kind="quickpatch" aria-labelledby="updates-quickpatch-heading">
+                  <div class="updates-timeline-head">
+                    <h2 class="updates-timeline-title" id="updates-quickpatch-heading"><span data-i18n="updates.quickpatchTitle">Quick-patch history</span></h2>
+                    <p class="updates-timeline-sub"><span data-i18n="updates.quickpatchSub">Overlay patches delivered between full releases.</span></p>
+                  </div>
+                  <div class="updates-timeline-toolbar" role="group" aria-label="Фильтр quick-patch">
+                    <div class="updates-filter-tabs" role="tablist" data-filter-group="quickpatch" aria-label="Объём списка quick-patch">
+                      <button
+                        type="button"
+                        class="updates-filter-tab is-active"
+                        role="tab"
+                        aria-selected="true"
+                        data-filter="all"
+                      ><span data-i18n="updates.filterAll">All</span></button>
+                      <button
+                        type="button"
+                        class="updates-filter-tab"
+                        role="tab"
+                        aria-selected="false"
+                        data-filter="important"
+                      ><span data-i18n="updates.filterImportant">Important</span></button>
+                    </div>
+                  </div>
+                  <div class="updates-timeline-scroll">
+                    <div id="updates-quickpatch-list" class="updates-changelog-list-host"></div>
+                  </div>
+                  <p class="updates-changelog-foot" id="updates-quickpatch-status" aria-live="polite"></p>
+                </section>
+              </div>
             </div>
           </section>
         </main>

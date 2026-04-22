@@ -580,19 +580,37 @@ function bindNav(): void {
 let updatesChangelogLoaded = false;
 let updatesChangelogLoading = false;
 let updatesChangelogCache: { updateItems: ChangelogItem[]; quickPatchItems: ChangelogItem[] } | null = null;
-let updatesChangelogKindBound = false;
 let updatesFilterTabsBound = false;
-let updatesTimelineFilter: "all" | "important" = "all";
+const updatesTimelineFilters: Record<UpdateTimelineKind, "all" | "important"> = {
+  updates: "all",
+  quickpatch: "all",
+};
+const UPDATES_SECTION_IDS: Record<UpdateTimelineKind, { list: string; status: string }> = {
+  updates: { list: "updates-releases-list", status: "updates-releases-status" },
+  quickpatch: { list: "updates-quickpatch-list", status: "updates-quickpatch-status" },
+};
 
-function formatReleaseDateRu(iso: string): string {
+function formatReleaseDate(iso: string, lang: Lang = getLang()): string {
   if (!iso) return "";
+  const locale = lang === "en" ? "en-US" : "ru-RU";
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return String(iso);
-    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+    return d.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
   } catch {
     return String(iso);
   }
+}
+
+/** Выбирает тело записи в соответствии с языком UI (`en` → `bodyEn || body`). */
+function pickLocalizedBody(it: ChangelogItem, lang: Lang): string {
+  if (lang === "en" && it.bodyEn) return it.bodyEn;
+  return it.body;
+}
+
+/** Возвращает новый массив с телом под текущий язык — исходный кэш не мутирует. */
+function localizeChangelog(items: ChangelogItem[], lang: Lang): ChangelogItem[] {
+  return items.map((it) => ({ ...it, body: pickLocalizedBody(it, lang) }));
 }
 
 function simplifyReleaseBody(raw: string | null | undefined): string {
@@ -608,17 +626,6 @@ function simplifyReleaseBody(raw: string | null | undefined): string {
   return s.trim();
 }
 
-function bindUpdatesChangelogKindOnce(): void {
-  if (updatesChangelogKindBound) return;
-  const sel = document.getElementById("updates-changelog-kind") as HTMLSelectElement | null;
-  if (!sel) return;
-  updatesChangelogKindBound = true;
-  sel.addEventListener("change", () => {
-    if (!updatesChangelogCache) return;
-    renderUpdatesChangelogList(updatesChangelogCache, sel.value);
-  });
-  enhanceCustomSelect(sel);
-}
 
 /**
  * Превращает <select> в кастомный визуальный selector (подменяет UI, но native <select>
@@ -778,30 +785,40 @@ function enhanceCustomSelect(native: HTMLSelectElement): void {
 
 function bindUpdatesFilterTabsOnce(): void {
   if (updatesFilterTabsBound) return;
-  const all = document.getElementById("updates-filter-all");
-  const imp = document.getElementById("updates-filter-important");
-  if (!all || !imp) return;
+  const groups = document.querySelectorAll<HTMLElement>(".updates-filter-tabs[data-filter-group]");
+  if (groups.length === 0) return;
   updatesFilterTabsBound = true;
-  const apply = (f: "all" | "important") => {
-    updatesTimelineFilter = f;
-    all.classList.toggle("is-active", f === "all");
-    imp.classList.toggle("is-active", f === "important");
-    all.setAttribute("aria-selected", f === "all" ? "true" : "false");
-    imp.setAttribute("aria-selected", f === "important" ? "true" : "false");
-    if (!updatesChangelogCache) return;
-    const sel = document.getElementById("updates-changelog-kind") as HTMLSelectElement | null;
-    renderUpdatesChangelogList(updatesChangelogCache, sel?.value || "updates");
-  };
-  all.addEventListener("click", () => apply("all"));
-  imp.addEventListener("click", () => apply("important"));
+
+  groups.forEach((group) => {
+    const raw = group.dataset.filterGroup;
+    if (raw !== "updates" && raw !== "quickpatch") return;
+    const kind = raw;
+    const tabs = Array.from(group.querySelectorAll<HTMLButtonElement>(".updates-filter-tab[data-filter]"));
+    const apply = (f: "all" | "important") => {
+      updatesTimelineFilters[kind] = f;
+      tabs.forEach((tab) => {
+        const active = tab.dataset.filter === f;
+        tab.classList.toggle("is-active", active);
+        tab.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      if (updatesChangelogCache) renderUpdatesSection(updatesChangelogCache, kind);
+    };
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const f = tab.dataset.filter === "important" ? "important" : "all";
+        apply(f);
+      });
+    });
+  });
 }
 
-function renderUpdatesChangelogList(
+function renderUpdatesSection(
   cache: { updateItems: ChangelogItem[]; quickPatchItems: ChangelogItem[] },
-  kind: string,
+  kind: UpdateTimelineKind,
 ): void {
-  const listEl = document.getElementById("updates-changelog-list");
-  const statusEl = document.getElementById("updates-changelog-status");
+  const ids = UPDATES_SECTION_IDS[kind];
+  const listEl = document.getElementById(ids.list);
+  const statusEl = document.getElementById(ids.status);
   if (!listEl || !statusEl) return;
 
   const items = kind === "quickpatch" ? cache.quickPatchItems : cache.updateItems;
@@ -811,57 +828,72 @@ function renderUpdatesChangelogList(
   statusEl.className = "updates-changelog-foot";
 
   if (arr.length === 0) {
-    statusEl.textContent = kind === "quickpatch" ? t("updates.foot.emptyQuickpatch") : t("updates.foot.emptyReleases");
+    statusEl.textContent = kind === "quickpatch"
+      ? t("updates.foot.emptyQuickpatch")
+      : t("updates.foot.emptyReleases");
     return;
   }
 
   statusEl.textContent = "";
 
-  const tk: UpdateTimelineKind = kind === "quickpatch" ? "quickpatch" : "updates";
+  const lang = getLang();
+  const localized = localizeChangelog(arr, lang);
+
   const deps: UpdateTimelineDeps = {
-    kind: tk,
+    kind,
     simplifyBody: simplifyReleaseBody,
-    formatDate: formatReleaseDateRu,
+    formatDate: (iso) => formatReleaseDate(iso, lang),
     trustedUrlPrefixes: TRUSTED_GH_RELEASE_URLS,
     onOpenUrl: (url) => {
       void openUrl(url);
     },
   };
 
-  renderUpdateTimeline(listEl, arr, updatesTimelineFilter, deps);
+  renderUpdateTimeline(listEl, localized, updatesTimelineFilters[kind], deps);
+}
+
+function renderUpdatesChangelogLists(
+  cache: { updateItems: ChangelogItem[]; quickPatchItems: ChangelogItem[] },
+): void {
+  renderUpdatesSection(cache, "updates");
+  renderUpdatesSection(cache, "quickpatch");
 }
 
 async function loadUpdatesChangelog(): Promise<void> {
-  const listEl = document.getElementById("updates-changelog-list");
-  const statusEl = document.getElementById("updates-changelog-status");
-  const sel = document.getElementById("updates-changelog-kind") as HTMLSelectElement | null;
-  if (!listEl || !statusEl) return;
+  const statusEls = (Object.keys(UPDATES_SECTION_IDS) as UpdateTimelineKind[])
+    .map((k) => document.getElementById(UPDATES_SECTION_IDS[k].status))
+    .filter((el): el is HTMLElement => el != null);
+  if (statusEls.length === 0) return;
   if (updatesChangelogLoading || updatesChangelogLoaded) return;
 
   updatesChangelogLoading = true;
-  statusEl.textContent = t("updates.foot.loading");
-  statusEl.className = "updates-changelog-foot";
+  for (const el of statusEls) {
+    el.textContent = t("updates.foot.loading");
+    el.className = "updates-changelog-foot";
+  }
 
   try {
     const res = await fetchReleaseNotes();
     if (!res.ok) {
-      statusEl.classList.add("is-error");
-      statusEl.textContent = res.message || t("updates.foot.fetchFail");
+      for (const el of statusEls) {
+        el.classList.add("is-error");
+        el.textContent = res.message || t("updates.foot.fetchFail");
+      }
       updatesChangelogLoading = false;
       return;
     }
 
     updatesChangelogCache = { updateItems: res.items, quickPatchItems: res.quickPatchItems };
 
-    bindUpdatesChangelogKindOnce();
     bindUpdatesFilterTabsOnce();
-    const kind = sel && sel.value ? sel.value : "updates";
-    renderUpdatesChangelogList(updatesChangelogCache, kind);
+    renderUpdatesChangelogLists(updatesChangelogCache);
 
     updatesChangelogLoaded = true;
   } catch (e: unknown) {
-    statusEl.classList.add("is-error");
-    statusEl.textContent = e instanceof Error ? e.message : "Ошибка";
+    for (const el of statusEls) {
+      el.classList.add("is-error");
+      el.textContent = e instanceof Error ? e.message : "Ошибка";
+    }
   }
   updatesChangelogLoading = false;
 }
@@ -1208,7 +1240,130 @@ type UiStartupSnapshot = {
   version: string;
   game: { running: boolean; image?: string | null };
   quickPatchCss: string;
+  autoexec?: AutoexecStatus;
 };
+
+type AutoexecStatus = {
+  game_found: boolean;
+  config_found: boolean;
+  game_dir: string | null;
+  cfg_path: string | null;
+  error: string | null;
+};
+
+type AutoexecUiState = "checking" | "found" | "missing" | "unavailable";
+
+let lastAutoexecStatus: AutoexecStatus | null = null;
+
+function applyAutoexecStatusUI(status: AutoexecStatus | null): void {
+  lastAutoexecStatus = status;
+  const valueEl = document.getElementById("stat-autoexec-value");
+  const card = document.getElementById("stat-card-autoexec");
+  const createBtn = document.getElementById("btn-create-autoexec") as HTMLButtonElement | null;
+
+  let state: AutoexecUiState;
+  if (!status) {
+    state = "checking";
+  } else if (!status.game_found) {
+    state = "unavailable";
+  } else if (status.config_found) {
+    state = "found";
+  } else {
+    state = "missing";
+  }
+
+  if (valueEl) {
+    valueEl.classList.remove("stat-ok", "stat-idle", "stat-warn", "stat-bad");
+    switch (state) {
+      case "found":
+        valueEl.textContent = t("stat.configFound");
+        valueEl.classList.add("stat-ok");
+        break;
+      case "missing":
+        valueEl.textContent = t("stat.configMissing");
+        valueEl.classList.add("stat-warn");
+        break;
+      case "unavailable":
+        valueEl.textContent = t("stat.configUnavailable");
+        valueEl.classList.add("stat-bad");
+        break;
+      default:
+        valueEl.textContent = t("stat.configChecking");
+        valueEl.classList.add("stat-idle");
+        break;
+    }
+  }
+
+  if (card && status?.cfg_path) {
+    card.setAttribute("title", status.cfg_path);
+  } else if (card) {
+    card.setAttribute("title", "autoexec.cfg in Deadlock/game/citadel/cfg");
+  }
+
+  if (createBtn) {
+    // Кнопка создания видна только если игра найдена, а конфига нет.
+    const show = state === "missing";
+    createBtn.hidden = !show;
+  }
+}
+
+async function refreshAutoexecStatus(): Promise<void> {
+  if (!isTauri()) {
+    applyAutoexecStatusUI({
+      game_found: false,
+      config_found: false,
+      game_dir: null,
+      cfg_path: null,
+      error: "Non-Tauri environment",
+    });
+    return;
+  }
+  try {
+    const status = await invoke<AutoexecStatus>("autoexec_status");
+    applyAutoexecStatusUI(status);
+  } catch {
+    applyAutoexecStatusUI({
+      game_found: false,
+      config_found: false,
+      game_dir: null,
+      cfg_path: null,
+      error: "autoexec_status invoke failed",
+    });
+  }
+}
+
+function bindCreateAutoexecButton(): void {
+  const btn = document.getElementById("btn-create-autoexec") as HTMLButtonElement | null;
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    if (!isTauri()) return;
+    const labelEl = btn.querySelector("[data-i18n]") as HTMLElement | null;
+    const originalKey = labelEl?.dataset.i18n ?? "btn.createConfig";
+    btn.disabled = true;
+    if (labelEl) labelEl.textContent = t("btn.creatingConfig");
+    try {
+      const status = await invoke<AutoexecStatus>("autoexec_create");
+      applyAutoexecStatusUI(status);
+      const cfg = status.cfg_path ?? "";
+      void message(`${t("toast.configCreated")}\n${cfg}`, {
+        title: t("toast.configCreatedTitle"),
+      });
+    } catch (e) {
+      const errText = e instanceof Error ? e.message : String(e);
+      const isNoGame = /not found/i.test(errText);
+      void message(isNoGame ? t("toast.configNoGame") : `${t("toast.configCreateFailed")}\n${errText}`, {
+        title: t("toast.configCreatedTitle"),
+        kind: "error",
+      });
+      // Обновим статус: возможно, игра действительно не найдена.
+      void refreshAutoexecStatus();
+    } finally {
+      btn.disabled = false;
+      if (labelEl) labelEl.textContent = t(originalKey);
+    }
+  });
+}
 
 function applyVersionLabels(version: string | null | undefined): void {
   const v = version && String(version).trim() ? String(version).trim() : "—";
@@ -1240,6 +1395,7 @@ async function tryUiStartupSnapshot(): Promise<boolean> {
     applyVersionLabels(snap.version);
     applyGameStatusUI({ running: Boolean(snap.game?.running), error: false });
     applyQuickPatchCssText(snap.quickPatchCss ?? "");
+    applyAutoexecStatusUI(snap.autoexec ?? null);
     return true;
   } catch {
     return false;
@@ -1513,12 +1669,14 @@ export async function initDeadlockApp(): Promise<void> {
   bindRangeRows();
   bindNav();
   bindQuickActions();
+  bindCreateAutoexecButton();
   bindVisualsCompareScrubber();
 
   const snapshotOk = await tryUiStartupSnapshot();
   if (!snapshotOk) {
     if (isTauri()) {
       void refreshGameStatus();
+      void refreshAutoexecStatus();
       void initQuickPatchStyles();
       void invoke<string>("app_version").then(
         (v) => applyVersionLabels(v),
@@ -1526,6 +1684,7 @@ export async function initDeadlockApp(): Promise<void> {
       );
     } else {
       applyVersionLabels(null);
+      applyAutoexecStatusUI(null);
     }
   }
   startGameStatusPolling({ skipImmediate: snapshotOk });
@@ -1546,7 +1705,9 @@ export async function initDeadlockApp(): Promise<void> {
       running: lastGameStatusState === "running",
       error: lastGameStatusState === "error",
     });
+    applyAutoexecStatusUI(lastAutoexecStatus);
     refreshLocalizedSelectOptions();
+    if (updatesChangelogCache) renderUpdatesChangelogLists(updatesChangelogCache);
   });
 }
 

@@ -1,3 +1,4 @@
+mod game_config;
 mod quick_patch;
 
 use serde_json::Value;
@@ -91,10 +92,12 @@ async fn ui_startup_snapshot() -> Value {
     let version = env!("CARGO_PKG_VERSION").to_string();
     let game = deadlock_process_status_value();
     let quick_patch_css = quick_patch::quick_patch_get_css().await.unwrap_or_default();
+    let autoexec = game_config::autoexec_status_value();
     serde_json::json!({
         "version": version,
         "game": game,
-        "quickPatchCss": quick_patch_css
+        "quickPatchCss": quick_patch_css,
+        "autoexec": autoexec,
     })
 }
 
@@ -216,6 +219,8 @@ pub fn run() {
             quick_patch::quick_patch_check_only,
             quick_patch::quick_patch_apply,
             quick_patch::quick_patch_get_css,
+            game_config::autoexec_status,
+            game_config::autoexec_create,
             splash_open_main,
         ])
         .run(tauri::generate_context!())

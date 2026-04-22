@@ -6,7 +6,10 @@ export type ChangelogItem = {
   tag: string;
   name: string;
   publishedAt: string;
+  /** Описание на языке по умолчанию (RU). */
   body: string;
+  /** Описание на английском, если предоставлено переводом. */
+  bodyEn?: string;
   url: string;
 };
 
@@ -61,21 +64,31 @@ export async function fetchReleaseNotes(): Promise<
       bundled = {};
     }
 
+    let bundledEn: Record<string, string> = {};
+    try {
+      const br = await fetch("/release-notes.en.json", { cache: "no-cache" });
+      if (br.ok) bundledEn = (await br.json()) as Record<string, string>;
+    } catch {
+      bundledEn = {};
+    }
+
     const items: ChangelogItem[] = data.map((r: Record<string, unknown>) => {
       const tag = r.tag_name != null ? String(r.tag_name) : "";
       const apiBody = typeof r.body === "string" ? r.body.trim() : "";
       const fromBundle = tag && bundled[tag] != null ? String(bundled[tag]).trim() : "";
       const body = apiBody || fromBundle;
+      const enBody = tag && bundledEn[tag] != null ? String(bundledEn[tag]).trim() : "";
       return {
         tag,
         name: r.name != null ? String(r.name) : "",
         publishedAt: r.published_at != null ? String(r.published_at) : "",
         body,
+        bodyEn: enBody || undefined,
         url: typeof r.html_url === "string" ? r.html_url : "",
       };
     });
 
-    let qpRows: { id?: string; date?: string; description?: string; body?: string }[] = [];
+    let qpRows: { id?: string; date?: string; description?: string; descriptionEn?: string; body?: string }[] = [];
     try {
       const r = await fetch("/quick-patch-changelog.json", { cache: "no-cache" });
       if (r.ok) {
@@ -92,12 +105,15 @@ export async function fetchReleaseNotes(): Promise<
         row.description != null
           ? String(row.description).trim()
           : String(row.body ?? "").trim();
+      const descriptionEn =
+        row.descriptionEn != null ? String(row.descriptionEn).trim() : "";
       const date = row.date != null ? String(row.date).trim() : "";
       return {
         tag: id ? `qp:${id}` : "qp",
         name: id ? `Quick-patch · ${id}` : "Quick-patch",
         publishedAt: date,
         body: description,
+        bodyEn: descriptionEn || undefined,
         url: QP_TREE,
       };
     });
