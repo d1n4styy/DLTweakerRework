@@ -847,6 +847,11 @@ function renderUpdatesSection(
     onOpenUrl: (url) => {
       void openUrl(url);
     },
+    labels: {
+      openRelease: t("updates.timeline.openRelease"),
+      openQp: t("updates.timeline.openQp"),
+      noDescription: t("updates.timeline.noDescription"),
+    },
   };
 
   renderUpdateTimeline(listEl, localized, updatesTimelineFilters[kind], deps);

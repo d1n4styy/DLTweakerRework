@@ -8,6 +8,12 @@ export type UpdateTimelineDeps = {
   formatDate: (iso: string) => string;
   trustedUrlPrefixes: string[];
   onOpenUrl: (url: string) => void;
+  /** Локализованные подписи. Передаются через deps, чтобы модуль не зависел напрямую от `./i18n`. */
+  labels?: {
+    openRelease?: string;
+    openQp?: string;
+    noDescription?: string;
+  };
 };
 
 function bodyToBulletLines(simplified: string): string[] {
@@ -77,10 +83,11 @@ function createUpdateTimelineItem(
 
   const bodyWrap = document.createElement("div");
   bodyWrap.className = "updates-timeline-body";
+  const noDescLabel = deps.labels?.noDescription ?? "Нет описания.";
   if (lines.length === 1) {
     const p = document.createElement("p");
     p.className = "updates-timeline-plain";
-    p.textContent = lines[0] || "Нет описания.";
+    p.textContent = lines[0] || noDescLabel;
     bodyWrap.append(p);
   } else {
     const ul = document.createElement("ul");
@@ -101,7 +108,9 @@ function createUpdateTimelineItem(
     const b = document.createElement("button");
     b.type = "button";
     b.className = "btn btn-ghost btn-sm";
-    b.textContent = deps.kind === "quickpatch" ? "Quick-patch на GitHub" : "Релиз на GitHub";
+    const openReleaseLabel = deps.labels?.openRelease ?? "Релиз на GitHub";
+    const openQpLabel = deps.labels?.openQp ?? "Quick-patch на GitHub";
+    b.textContent = deps.kind === "quickpatch" ? openQpLabel : openReleaseLabel;
     b.addEventListener("click", () => {
       deps.onOpenUrl(it.url);
     });

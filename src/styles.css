@@ -1681,8 +1681,8 @@ html.dl-native-win-frame .view-settings::before {
    — Колонка 1 (`auto`) ширится по максимальному из контента (pill/кнопок), то есть
      бейдж «READY TO CHECK» получает ту же ширину, что и ряд кнопок
      «Check for updates» + «Download and install», независимо от языка.
-   — Колонка 2 (`1fr`) — пустой «растяжитель» между pill/кнопками и версиями.
-   — Колонка 3 (`auto`) — блок версий справа.
+   — Колонка 2 (`auto`) — блок версий, стоит вплотную за pill.
+   — Колонка 3 (`1fr`) — растяжитель справа.
    `.updates-hero-top` и так была grid, но теперь весь лейаут задаётся самой
    карточкой — `.updates-hero-top` сплющена в `display: contents`. */
 .updates-hero-card {
@@ -1699,9 +1699,9 @@ html.dl-native-win-frame .view-settings::before {
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
   overflow: hidden;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr);
   grid-template-areas:
-    "badge    .        versions"
+    "badge    versions ."
     "detail   detail   detail"
     "progress progress progress"
     "actions  .        .";
@@ -1724,7 +1724,7 @@ html.dl-native-win-frame .view-settings::before {
 
 .updates-hero-card > .updates-hero-versions {
   grid-area: versions;
-  justify-self: end;
+  justify-self: start;
 }
 
 .updates-hero-card > .updates-hero-detail {

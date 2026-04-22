@@ -35,9 +35,9 @@ body {
    колонка с pill/кнопками получает общую ширину по самому широкому ребёнку. */
 .view-settings .updates-hero-card {
   display: grid !important;
-  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  grid-template-columns: auto auto minmax(0, 1fr) !important;
   grid-template-areas:
-    "badge    .        versions"
+    "badge    versions ."
     "detail   detail   detail"
     "progress progress progress"
     "actions  .        ." !important;
@@ -60,7 +60,7 @@ body {
 
 .view-settings .updates-hero-card > .updates-hero-versions {
   grid-area: versions !important;
-  justify-self: end !important;
+  justify-self: start !important;
 }
 
 .view-settings .updates-hero-card > .updates-hero-detail {

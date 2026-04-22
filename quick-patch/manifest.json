@@ -1,13 +1,13 @@
 {
-  "id": "qp-rework-0.1.7-2",
+  "id": "qp-rework-0.1.7-3",
   "minAppSemver": "0.1.0",
   "maxAppSemver": "99.99.99",
-  "description": "Вкладка «Обновления»: пилл «Ready to Check» / «Готово к проверке» теперь упирается в правый край кнопки «Download and install», а не растягивается на всю ширину карточки. Применяется поверх 0.1.7 через overlay.css.",
+  "description": "Во вкладке «Обновления» полоса «Готово к проверке» больше не растягивается на всю карточку, а блок с версией стоит вплотную к ней.",
   "assets": [
     {
       "path": "overlay.css",
       "url": "https://raw.githubusercontent.com/d1n4styy/DLTweakerRework/main/quick-patch/overlay.css",
-      "sha256": "c47f71a094c49f36a4b3514e631d510f1009a69210eae40d3ffe4855858c013f"
+      "sha256": "a8aa5286a76da10556a6c0e44be42c8cef76cc275225bec3582a7cf7a2230b90"
     }
   ]
 }

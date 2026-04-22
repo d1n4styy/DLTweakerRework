@@ -2,14 +2,14 @@
   {
     "id": "qp-rework-0.1.7-2",
     "date": "2026-04-22",
-    "description": "Вкладка «Обновления»: полоса с «Готово к проверке» больше не растягивается на всю ширину карточки. Теперь она занимает ровно ту же ширину, что и ряд кнопок «Проверить обновления» + «Скачать и установить» под ней (CSS Grid-колонка с auto-шириной по самому широкому элементу; `!important` в overlay.css перекрывает стили 0.1.7).",
-    "descriptionEn": "Updates tab: the «Ready to Check» status pill no longer stretches across the full hero-card width. It now has the exact width of the button row («Check for updates» + «Download and install») below it (CSS Grid column sized by the widest child; `!important` in overlay.css overrides bundled 0.1.7 styles)."
+    "description": "— Вкладка «Обновления»: полоса «Готово к проверке» теперь заканчивается там же, где кнопка «Скачать и установить» — больше не растягивается на всю карточку.\n— Вкладка «Обновления»: блок с версией (Текущая / Новая) стоит вплотную к этой полосе, а не в правом углу карточки.",
+    "descriptionEn": "— Updates tab: the «Ready to Check» strip now ends where the «Download and install» button ends — it no longer stretches across the whole card.\n— Updates tab: the version block (Current / New) sits right next to the strip instead of being pinned to the right edge of the card."
   },
   {
     "id": "qp-rework-0.1.7-1",
     "date": "2026-04-22",
-    "description": "Сопровождение релиза 0.1.7: свежая ротация overlay.css (id бампнут для форсированного re-apply клиентов, content-sha256 сверен `npm run qp:sync`). Напоминаем, что EN/RU-переводы журнала и два блока во вкладке «Обновления» поехали бандлом — для их получения нужно обновиться до 0.1.7.",
-    "descriptionEn": "Companion to the 0.1.7 release: a fresh overlay.css rotation (id bumped to force a client re-apply, content-sha256 verified by `npm run qp:sync`). Note that the EN/RU changelog translations and the two-column Updates tab ship with the app bundle — install 0.1.7 to get them."
+    "description": "Сопровождение релиза 0.1.7 — внутренняя ротация overlay.css. Видимые изменения приезжают с полной установкой 0.1.7.",
+    "descriptionEn": "Companion to the 0.1.7 release — internal overlay.css rotation. The visible changes ship with the full 0.1.7 install."
   },
   {
     "id": "qp-rework-0.1.1-2",
