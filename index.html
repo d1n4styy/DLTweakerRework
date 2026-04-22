@@ -40,18 +40,28 @@
 
       <div class="shell">
 <aside class="sidebar">
-          <div class="brand">
+          <div class="brand" id="brand-container">
             <img
-              class="brand-logo"
+              class="brand-logo brand-logo--tweaker is-active"
+              id="brand-logo-tweaker"
               src="/assets/logo.png"
               alt="Deadlock Tweaker"
               width="360"
               height="360"
               draggable="false"
             />
+            <img
+              class="brand-logo brand-logo--mm"
+              id="brand-logo-mm"
+              src="/assets/logo-mm.png"
+              alt="Deadlock Mod Manager"
+              width="360"
+              height="360"
+              draggable="false"
+            />
           </div>
 
-          <nav class="nav" id="main-nav">
+          <nav class="nav nav--tweaker is-active" id="nav-tweaker">
             <button type="button" class="nav-item active" data-view="dashboard">
               <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" /></svg>
               <span data-i18n="nav.dashboard">Dashboard</span>
@@ -80,13 +90,40 @@
               <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20V6a2 2 0 012-2h12a2 2 0 012 2v14M4 20h16M4 20l2-4h12l2 4" /><path d="M9 10h6" /></svg>
               <span data-i18n="nav.profiles">Profiles</span>
             </button>
-            <button type="button" class="nav-item" data-view="mods">
-              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2l9 4.5v11L12 22 3 17.5v-11L12 2z" /><path d="M3 6.5l9 4.5 9-4.5M12 22V11" /></svg>
-              <span data-i18n="nav.mods">Mod Manager</span>
-            </button>
             <button type="button" class="nav-item" data-view="settings">
               <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z" /><path d="M9 9h6v6H9V9z" /></svg>
               <span data-i18n="nav.updates">Updates</span>
+            </button>
+          </nav>
+
+          <nav class="nav nav--mm" id="nav-mm">
+            <button type="button" class="nav-item active" data-mm-view="overview">
+              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" /></svg>
+              <span data-i18n="mm.nav.overview">Overview</span>
+            </button>
+            <button type="button" class="nav-item" data-mm-view="installed">
+              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+              <span data-i18n="mm.nav.installed">Installed</span>
+            </button>
+            <button type="button" class="nav-item" data-mm-view="my-mods">
+              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2l3 5 5 1-4 4 1 6-5-3-5 3 1-6-4-4 5-1 3-5z" /></svg>
+              <span data-i18n="mm.nav.myMods">My Mods</span>
+            </button>
+            <button type="button" class="nav-item" data-mm-view="categories">
+              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.2" /><rect x="14" y="3" width="7" height="7" rx="1.2" /><rect x="3" y="14" width="7" height="7" rx="1.2" /><rect x="14" y="14" width="7" height="7" rx="1.2" /></svg>
+              <span data-i18n="mm.nav.categories">Categories</span>
+            </button>
+            <button type="button" class="nav-item" data-mm-view="collections">
+              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16v4H4zM4 12h16v4H4zM4 18h10v2H4z" /></svg>
+              <span data-i18n="mm.nav.collections">Collections</span>
+            </button>
+            <button type="button" class="nav-item" data-mm-view="downloads">
+              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m-5-5l5 5 5-5M4 20h16" /></svg>
+              <span data-i18n="mm.nav.downloads">Downloads</span>
+            </button>
+            <button type="button" class="nav-item" data-mm-view="mm-settings">
+              <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1v0z" /></svg>
+              <span data-i18n="mm.nav.settings">Settings</span>
             </button>
           </nav>
 
@@ -105,6 +142,18 @@
               <span class="game-status-pill game-status-pill--off" id="game-status-pill">…</span>
             </div>
           </div>
+
+          <button
+            type="button"
+            class="mode-switch-btn"
+            id="mode-switch-btn"
+            title="Switch interface mode"
+          >
+            <span class="mode-switch-btn__ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 7h10l-3-3M17 17H7l3 3" /></svg>
+            </span>
+            <span class="mode-switch-btn__label" id="mode-switch-btn-label" data-i18n="mode.switchToMm">Switch to Mod Manager</span>
+          </button>
         </aside>
 
         <main class="main"><section class="view view-dashboard" data-view-panel="dashboard">
@@ -440,53 +489,187 @@
               </article>
             </div>
           </section>
-          <section class="view view-mods hidden" data-view-panel="mods">
-            <div class="mods-page">
-              <header class="mods-page__header">
-                <div>
-                  <h1 class="mods-page__title" data-i18n="mods.title">Mod Manager</h1>
-                  <p class="sub" data-i18n="mods.sub">Browse GameBanana mods for Deadlock and manage installed ones.</p>
+          <section class="view view-mm view-mm-overview hidden" data-view-panel="mm-overview">
+            <header class="mm-page__header">
+              <div>
+                <h1 class="mm-page__title" data-i18n="mm.overview.title">Overview</h1>
+                <p class="sub" data-i18n="mm.overview.sub">Browse and manage mods for Deadlock.</p>
+              </div>
+              <div class="mm-page__header-actions">
+                <div class="mm-search">
+                  <svg class="mm-search__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16.5 16.5 4 4" /></svg>
+                  <input type="search" id="mm-overview-search" placeholder="Search mods…" data-i18n-attr="placeholder:mm.overview.searchPlaceholder" />
                 </div>
-                <div class="mods-game-chip" id="mods-game-chip" role="status" aria-live="polite">
-                  <span class="mods-game-chip__dot" aria-hidden="true"></span>
-                  <span class="mods-game-chip__label" data-i18n="mods.chipChecking">Locating Deadlock…</span>
+                <button type="button" class="btn btn-primary btn-sm" id="mm-install-mod-btn"><span aria-hidden="true">＋</span> <span data-i18n="mm.overview.installMod">Install Mod</span></button>
+                <div class="mm-view-toggle" role="group" aria-label="View layout">
+                  <button type="button" class="mm-view-toggle__btn is-active" data-mm-layout="grid" aria-label="Grid view">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.2" /><rect x="14" y="3" width="7" height="7" rx="1.2" /><rect x="3" y="14" width="7" height="7" rx="1.2" /><rect x="14" y="14" width="7" height="7" rx="1.2" /></svg>
+                  </button>
+                  <button type="button" class="mm-view-toggle__btn" data-mm-layout="list" aria-label="List view">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+                  </button>
                 </div>
-              </header>
+              </div>
+            </header>
 
-              <section class="card mods-browse" aria-labelledby="mods-browse-heading">
-                <div class="mods-browse__head">
-                  <h2 class="card-title" id="mods-browse-heading"><span data-i18n="mods.browseTitle">GameBanana</span></h2>
-                  <form class="mods-search" id="mods-search-form">
-                    <input
-                      type="search"
-                      id="mods-search-input"
-                      class="mods-search__input"
-                      autocomplete="off"
-                      placeholder="Search mods…"
-                      data-i18n-attr="placeholder:mods.searchPlaceholder"
-                    />
-                    <button type="submit" class="btn btn-primary btn-sm"><span data-i18n="mods.searchBtn">Search</span></button>
-                    <button type="button" class="btn btn-ghost btn-sm" id="mods-search-reset"><span data-i18n="mods.searchReset">Reset</span></button>
-                  </form>
+            <div class="mm-stats-row">
+              <div class="mm-stat"><span class="mm-stat__label" data-i18n="mm.stat.total">Total Mods</span><span class="mm-stat__value" id="mm-stat-total">—</span><span class="mm-stat__sub" data-i18n="mm.stat.totalSub">available</span></div>
+              <div class="mm-stat"><span class="mm-stat__label" data-i18n="mm.stat.installed">Installed Mods</span><span class="mm-stat__value mm-stat__value--accent" id="mm-stat-installed">0</span><span class="mm-stat__sub" id="mm-stat-installed-sub"><span data-i18n="mm.stat.installedSub">enabled:</span> <span id="mm-stat-enabled">0</span></span></div>
+              <div class="mm-stat"><span class="mm-stat__label" data-i18n="mm.stat.myMods">My Mods</span><span class="mm-stat__value" id="mm-stat-my">0</span><span class="mm-stat__sub" data-i18n="mm.stat.myModsSub">created</span></div>
+              <div class="mm-stat"><span class="mm-stat__label" data-i18n="mm.stat.collections">Collections</span><span class="mm-stat__value" id="mm-stat-collections">0</span><span class="mm-stat__sub" data-i18n="mm.stat.collectionsSub">collections</span></div>
+              <div class="mm-stat"><span class="mm-stat__label" data-i18n="mm.stat.loadOrder">Load Order</span><span class="mm-stat__value mm-stat__value--accent" data-i18n="mm.stat.loadOrderVal">Custom</span><span class="mm-stat__sub" data-i18n="mm.stat.loadOrderSub">priority</span></div>
+            </div>
+
+            <div class="mm-overview-grid">
+              <section class="card mm-block" aria-labelledby="mm-featured-h">
+                <div class="mm-block__head">
+                  <h2 class="card-title"><span class="mm-block__bullet" aria-hidden="true"></span><span id="mm-featured-h" data-i18n="mm.featured.title">Featured Mods</span></h2>
+                  <button type="button" class="mm-link-btn" data-mm-view-link="overview"><span data-i18n="mm.viewAll">View All</span></button>
                 </div>
-                <div class="mods-grid" id="mods-grid" aria-live="polite"></div>
-                <div class="mods-pager" id="mods-pager" hidden>
-                  <button type="button" class="btn btn-ghost btn-sm" id="mods-page-prev" disabled><span data-i18n="mods.pagePrev">← Prev</span></button>
-                  <span class="mods-pager__label" id="mods-pager-label">—</span>
-                  <button type="button" class="btn btn-ghost btn-sm" id="mods-page-next" disabled><span data-i18n="mods.pageNext">Next →</span></button>
-                </div>
-                <p class="mods-foot" id="mods-status" aria-live="polite"></p>
+                <div class="mm-featured-grid" id="mm-featured-grid" aria-live="polite"></div>
+                <p class="mm-foot" id="mm-featured-status" aria-live="polite"></p>
               </section>
 
-              <section class="card mods-installed" aria-labelledby="mods-installed-heading">
-                <div class="mods-installed__head">
-                  <h2 class="card-title" id="mods-installed-heading"><span data-i18n="mods.installedTitle">Installed mods</span></h2>
-                  <p class="mods-installed__path" id="mods-installed-path"></p>
+              <section class="card mm-block mm-block--categories" aria-labelledby="mm-categories-h">
+                <div class="mm-block__head">
+                  <h2 class="card-title"><span id="mm-categories-h" data-i18n="mm.categories.title">Categories</span></h2>
+                  <button type="button" class="mm-link-btn" data-mm-view-link="categories"><span data-i18n="mm.viewAll">View All</span></button>
                 </div>
-                <ul class="mods-installed__list" id="mods-installed-list" role="list"></ul>
-                <p class="mods-foot" id="mods-installed-empty" hidden data-i18n="mods.installedEmpty">No mods installed.</p>
+                <ul class="mm-cat-list" id="mm-cat-list" role="list"></ul>
+              </section>
+
+              <section class="card mm-block mm-block--recent" aria-labelledby="mm-recent-h">
+                <div class="mm-block__head">
+                  <h2 class="card-title"><span class="mm-block__bullet" aria-hidden="true"></span><span id="mm-recent-h" data-i18n="mm.recent.title">Recently Updated</span></h2>
+                </div>
+                <ul class="mm-recent-list" id="mm-recent-list" role="list"></ul>
+              </section>
+
+              <section class="card mm-block mm-block--collections" aria-labelledby="mm-collections-h">
+                <div class="mm-block__head">
+                  <h2 class="card-title"><span id="mm-collections-h" data-i18n="mm.collections.title">Collections</span></h2>
+                  <button type="button" class="mm-link-btn" data-mm-view-link="collections"><span data-i18n="mm.viewAll">View All</span></button>
+                </div>
+                <ul class="mm-coll-list" id="mm-coll-list" role="list"></ul>
               </section>
             </div>
+
+            <div class="mm-dropzone" id="mm-dropzone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3v12m-5-5l5 5 5-5" /><path d="M4 20h16" /></svg>
+              <p><span data-i18n="mm.dropzone.primary">Drag and drop mod files here</span><br /><span class="sub" data-i18n="mm.dropzone.secondary">or click to browse</span></p>
+            </div>
+          </section>
+
+          <section class="view view-mm view-mm-installed hidden" data-view-panel="mm-installed">
+            <header class="mm-page__header">
+              <div>
+                <h1 class="mm-page__title" data-i18n="mm.installed.title">Installed</h1>
+                <p class="sub" data-i18n="mm.installed.sub">Manage your installed mods.</p>
+              </div>
+              <div class="mm-page__header-actions">
+                <div class="mm-search">
+                  <svg class="mm-search__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16.5 16.5 4 4" /></svg>
+                  <input type="search" id="mm-installed-search" placeholder="Search installed mods…" data-i18n-attr="placeholder:mm.installed.searchPlaceholder" />
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm"><span data-i18n="mm.installed.loadOrder">Load Order</span></button>
+                <div class="mm-filter-chip">
+                  <span data-i18n="mm.installed.filterLabel">All</span>
+                </div>
+              </div>
+            </header>
+
+            <section class="card mm-table-card">
+              <p class="mm-table-summary" id="mm-installed-summary" aria-live="polite">—</p>
+              <div class="mm-table-wrap">
+                <table class="mm-table" id="mm-installed-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n="mm.table.name">Name</th>
+                      <th data-i18n="mm.table.category">Category</th>
+                      <th data-i18n="mm.table.version">Version</th>
+                      <th data-i18n="mm.table.status">Status</th>
+                      <th data-i18n="mm.table.loadOrder">Load Order</th>
+                      <th aria-label=""></th>
+                    </tr>
+                  </thead>
+                  <tbody id="mm-installed-tbody"></tbody>
+                </table>
+              </div>
+              <p class="mm-foot" id="mm-installed-empty" hidden data-i18n="mods.installedEmpty">No mods installed.</p>
+            </section>
+          </section>
+
+          <section class="view view-mm view-mm-my-mods hidden" data-view-panel="mm-my-mods">
+            <header class="mm-page__header">
+              <div>
+                <h1 class="mm-page__title" data-i18n="mm.myMods.title">My Mods</h1>
+                <p class="sub" data-i18n="mm.myMods.sub">Manage and update your created mods.</p>
+              </div>
+              <div class="mm-page__header-actions">
+                <button type="button" class="btn btn-primary btn-sm"><span aria-hidden="true">＋</span> <span data-i18n="mm.myMods.create">Create Mod</span></button>
+              </div>
+            </header>
+            <section class="card">
+              <ul class="mm-my-list" id="mm-my-list" role="list"></ul>
+              <p class="mm-table-summary" id="mm-my-summary"></p>
+            </section>
+          </section>
+
+          <section class="view view-mm view-mm-categories hidden" data-view-panel="mm-categories">
+            <header class="mm-page__header">
+              <div>
+                <h1 class="mm-page__title" data-i18n="mm.categoriesPage.title">Categories</h1>
+                <p class="sub" data-i18n="mm.categoriesPage.sub">Browse mods by category.</p>
+              </div>
+            </header>
+            <section class="card">
+              <ul class="mm-cat-list mm-cat-list--large" id="mm-categories-list" role="list"></ul>
+            </section>
+          </section>
+
+          <section class="view view-mm view-mm-collections hidden" data-view-panel="mm-collections">
+            <header class="mm-page__header">
+              <div>
+                <h1 class="mm-page__title" data-i18n="mm.collectionsPage.title">Collections</h1>
+                <p class="sub" data-i18n="mm.collectionsPage.sub">Curated bundles of mods.</p>
+              </div>
+            </header>
+            <section class="card">
+              <ul class="mm-coll-list mm-coll-list--large" id="mm-collections-list" role="list"></ul>
+            </section>
+          </section>
+
+          <section class="view view-mm view-mm-downloads hidden" data-view-panel="mm-downloads">
+            <header class="mm-page__header">
+              <div>
+                <h1 class="mm-page__title" data-i18n="mm.downloads.title">Downloads</h1>
+                <p class="sub" data-i18n="mm.downloads.sub">In-progress and recent downloads.</p>
+              </div>
+            </header>
+            <section class="card">
+              <ul class="mm-downloads-list" id="mm-downloads-list" role="list"></ul>
+              <p class="mm-foot" id="mm-downloads-empty" data-i18n="mm.downloads.empty">No active downloads.</p>
+            </section>
+          </section>
+
+          <section class="view view-mm view-mm-settings hidden" data-view-panel="mm-settings">
+            <header class="mm-page__header">
+              <div>
+                <h1 class="mm-page__title" data-i18n="mm.settingsPage.title">Mod Manager · Settings</h1>
+                <p class="sub" data-i18n="mm.settingsPage.sub">Integration paths and application safety.</p>
+              </div>
+            </header>
+
+            <section class="card" aria-labelledby="mm-restore-h">
+              <div class="mm-block__head">
+                <h2 class="card-title" id="mm-restore-h"><span data-i18n="mm.restore.title">App Restore</span></h2>
+                <button type="button" class="btn btn-ghost btn-sm" id="mm-restore-create"><span data-i18n="mm.restore.create">Create Restore Point</span></button>
+              </div>
+              <p class="mm-foot" data-i18n="mm.restore.sub">Snapshots of the app state before updates. Keeps the last 3 points.</p>
+              <ul class="mm-restore-list" id="mm-restore-list" role="list"></ul>
+              <p class="mm-foot" id="mm-restore-empty" hidden data-i18n="mm.restore.empty">No restore points yet.</p>
+              <p class="mm-foot mm-restore-status" id="mm-restore-status" aria-live="polite"></p>
+            </section>
           </section>
 
           <section class="view view-settings hidden" data-view-panel="settings">

@@ -7,7 +7,8 @@ import { ask, message } from "@tauri-apps/plugin-dialog";
 import { fetchReleaseNotes, type ChangelogItem } from "./release-notes";
 import { renderUpdateTimeline, type UpdateTimelineDeps, type UpdateTimelineKind } from "./updates-panel";
 import { applyAll as applyI18n, getLang, onLangChange, setLang, t, type Lang } from "./i18n";
-import { openModManagerTab } from "./mod-manager";
+import { initModeSwitcher, type AppMode } from "./mode-switcher";
+import { onModManagerActive } from "./mm-views";
 
 const VISUALS_SCRUB_POS_KEY = "dl-visuals-compare-scrub";
 const TRUSTED_GH_RELEASE_URLS = ["https://github.com/d1n4styy/DLTweakerRework"];
@@ -574,7 +575,6 @@ function bindNav(): void {
       if (view === "profiles") renderProfilesList();
       if (view === "settings") void loadUpdatesChangelog();
       if (view === "visuals") ensureVisualsCompareAssetsLoaded();
-      if (view === "mods") void openModManagerTab();
     });
   });
 }
@@ -1674,6 +1674,10 @@ export async function initDeadlockApp(): Promise<void> {
   bindQuickActions();
   bindCreateAutoexecButton();
   bindVisualsCompareScrubber();
+
+  initModeSwitcher((mode: AppMode) => {
+    if (mode === "mods") onModManagerActive();
+  });
 
   const snapshotOk = await tryUiStartupSnapshot();
   if (!snapshotOk) {

@@ -1,3 +1,4 @@
+mod app_restore;
 mod game_config;
 mod mod_manager;
 mod quick_patch;
@@ -228,6 +229,10 @@ pub fn run() {
             mod_manager::mod_manager_list_installed,
             mod_manager::mod_manager_toggle,
             mod_manager::mod_manager_remove,
+            app_restore::app_restore_list,
+            app_restore::app_restore_create,
+            app_restore::app_restore_apply,
+            app_restore::app_restore_delete,
             splash_open_main,
         ])
         .run(tauri::generate_context!())
