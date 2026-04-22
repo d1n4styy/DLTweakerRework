@@ -1,13 +1,13 @@
 {
-  "id": "qp-rework-0.1.7-1",
+  "id": "qp-rework-0.1.7-2",
   "minAppSemver": "0.1.0",
   "maxAppSemver": "99.99.99",
-  "description": "Сопровождение релиза 0.1.7: свежая ротация overlay.css (id для форсированного re-apply у клиентов). EN/RU-переводы changelog и два блока во вкладке «Обновления» доступны после установки 0.1.7.",
+  "description": "Вкладка «Обновления»: пилл «Ready to Check» / «Готово к проверке» теперь упирается в правый край кнопки «Download and install», а не растягивается на всю ширину карточки. Применяется поверх 0.1.7 через overlay.css.",
   "assets": [
     {
       "path": "overlay.css",
       "url": "https://raw.githubusercontent.com/d1n4styy/DLTweakerRework/main/quick-patch/overlay.css",
-      "sha256": "2139c9a00d5fa86b713f073a108dd0bf96505f351397aa4b082424fb2cd5edec"
+      "sha256": "c47f71a094c49f36a4b3514e631d510f1009a69210eae40d3ffe4855858c013f"
     }
   ]
 }

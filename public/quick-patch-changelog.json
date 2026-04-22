@@ -1,5 +1,11 @@
 [
   {
+    "id": "qp-rework-0.1.7-2",
+    "date": "2026-04-22",
+    "description": "Вкладка «Обновления»: полоса с «Готово к проверке» больше не растягивается на всю ширину карточки. Теперь она занимает ровно ту же ширину, что и ряд кнопок «Проверить обновления» + «Скачать и установить» под ней (CSS Grid-колонка с auto-шириной по самому широкому элементу; `!important` в overlay.css перекрывает стили 0.1.7).",
+    "descriptionEn": "Updates tab: the «Ready to Check» status pill no longer stretches across the full hero-card width. It now has the exact width of the button row («Check for updates» + «Download and install») below it (CSS Grid column sized by the widest child; `!important` in overlay.css overrides bundled 0.1.7 styles)."
+  },
+  {
     "id": "qp-rework-0.1.7-1",
     "date": "2026-04-22",
     "description": "Сопровождение релиза 0.1.7: свежая ротация overlay.css (id бампнут для форсированного re-apply клиентов, content-sha256 сверен `npm run qp:sync`). Напоминаем, что EN/RU-переводы журнала и два блока во вкладке «Обновления» поехали бандлом — для их получения нужно обновиться до 0.1.7.",

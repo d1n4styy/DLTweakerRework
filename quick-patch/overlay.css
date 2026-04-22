@@ -28,3 +28,66 @@ body {
 .view-settings .updates-timeline-scroll {
   max-width: min(720px, 100%) !important;
 }
+
+/* qp-rework-0.1.7-1: Пилл «Ready to Check» / «Готово к проверке» упирается в
+   правый край кнопки «Download and install», а не растягивается на всю ширину
+   hero-карточки. Достигается переводом `.updates-hero-card` в grid 3×N, где
+   колонка с pill/кнопками получает общую ширину по самому широкому ребёнку. */
+.view-settings .updates-hero-card {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    "badge    .        versions"
+    "detail   detail   detail"
+    "progress progress progress"
+    "actions  .        ." !important;
+  column-gap: 18px !important;
+  row-gap: 10px !important;
+  align-items: center !important;
+}
+
+.view-settings .updates-hero-top {
+  display: contents !important;
+}
+
+.view-settings .updates-hero-card > .updates-status-badge {
+  grid-area: badge !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  justify-self: stretch !important;
+  box-sizing: border-box !important;
+}
+
+.view-settings .updates-hero-card > .updates-hero-versions {
+  grid-area: versions !important;
+  justify-self: end !important;
+}
+
+.view-settings .updates-hero-card > .updates-hero-detail {
+  grid-area: detail !important;
+}
+
+.view-settings .updates-hero-card > .updates-download-progress {
+  grid-area: progress !important;
+}
+
+.view-settings .updates-hero-card > .updates-hero-actions {
+  grid-area: actions !important;
+  margin-top: 4px !important;
+}
+
+@media (max-width: 720px) {
+  .view-settings .updates-hero-card {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "badge"
+      "versions"
+      "detail"
+      "progress"
+      "actions" !important;
+  }
+
+  .view-settings .updates-hero-card > .updates-hero-versions {
+    justify-self: start !important;
+  }
+}

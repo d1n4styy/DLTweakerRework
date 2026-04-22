@@ -1676,7 +1676,15 @@ html.dl-native-win-frame .view-settings::before {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ---- Hero card (status + version + actions) — компактная версия ---- */
+/* ---- Hero card (status + version + actions) — компактная версия ----
+   Карточка — grid 3×N:
+   — Колонка 1 (`auto`) ширится по максимальному из контента (pill/кнопок), то есть
+     бейдж «READY TO CHECK» получает ту же ширину, что и ряд кнопок
+     «Check for updates» + «Download and install», независимо от языка.
+   — Колонка 2 (`1fr`) — пустой «растяжитель» между pill/кнопками и версиями.
+   — Колонка 3 (`auto`) — блок версий справа.
+   `.updates-hero-top` и так была grid, но теперь весь лейаут задаётся самой
+   карточкой — `.updates-hero-top` сплющена в `display: contents`. */
 .updates-hero-card {
   position: relative;
   padding: 16px 20px;
@@ -1690,19 +1698,62 @@ html.dl-native-win-frame .view-settings::before {
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
   overflow: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "badge    .        versions"
+    "detail   detail   detail"
+    "progress progress progress"
+    "actions  .        .";
+  column-gap: 18px;
+  row-gap: 10px;
+  align-items: center;
 }
 
 .updates-hero-top {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px 18px;
-  position: relative;
+  display: contents;
 }
 
+.updates-hero-card > .updates-status-badge {
+  grid-area: badge;
+  /* Растягиваем бейдж по ширине колонки (которая уравнена с рядом кнопок). */
+  width: 100%;
+  max-width: 100%;
+  justify-self: stretch;
+}
+
+.updates-hero-card > .updates-hero-versions {
+  grid-area: versions;
+  justify-self: end;
+}
+
+.updates-hero-card > .updates-hero-detail {
+  grid-area: detail;
+}
+
+.updates-hero-card > .updates-download-progress {
+  grid-area: progress;
+}
+
+.updates-hero-card > .updates-hero-actions {
+  grid-area: actions;
+  margin-top: 4px;
+}
+
+/* На узких окнах — одно-колоночный поток: бейдж → версии → детали → прогресс → кнопки. */
 @media (max-width: 720px) {
-  .updates-hero-top {
+  .updates-hero-card {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "badge"
+      "versions"
+      "detail"
+      "progress"
+      "actions";
+  }
+
+  .updates-hero-card > .updates-hero-versions {
+    justify-self: start;
   }
 }
 
@@ -1724,6 +1775,7 @@ html.dl-native-win-frame .view-settings::before {
     border-color 0.18s ease,
     color 0.18s ease,
     background 0.18s ease;
+  box-sizing: border-box;
 }
 
 .updates-status-badge::before {
