@@ -2,16 +2,57 @@ const GH_RELEASES_API =
   "https://api.github.com/repos/d1n4styy/DLTweakerRework/releases?per_page=12";
 const QP_TREE = "https://github.com/d1n4styy/DLTweakerRework/tree/main/quick-patch";
 
+export type ChangelogSections = {
+  /** Новые фичи / изменения логики. Только эти секции попадают в фильтр «Важные». */
+  functionality?: string[];
+  /** Правки UI/верстки/локализации — в фильтре «Все», но не в «Важные». */
+  interface?: string[];
+};
+
 export type ChangelogItem = {
   tag: string;
   name: string;
   publishedAt: string;
-  /** Описание на языке по умолчанию (RU). */
+  /** Описание на языке по умолчанию (RU) — склеенный текст, для fallback-рендера и old-style записей. */
   body: string;
   /** Описание на английском, если предоставлено переводом. */
   bodyEn?: string;
+  /** Структурированное описание RU (если в bundled JSON лежит объект, а не строка). */
+  sections?: ChangelogSections;
+  /** Структурированное описание EN. */
+  sectionsEn?: ChangelogSections;
   url: string;
 };
+
+type RawNote = string | { functionality?: unknown; interface?: unknown } | undefined | null;
+
+/** Преобразует значение из bundled JSON к `{ body, sections }`.
+ * — Строка: `sections = undefined`, `body = строка`.
+ * — Объект: `sections` — нормализованные массивы строк, `body` — склейка для fallback. */
+function parseNote(raw: RawNote): { body: string; sections?: ChangelogSections } {
+  if (raw == null) return { body: "" };
+  if (typeof raw === "string") return { body: raw.trim() };
+  if (typeof raw === "object") {
+    const toArr = (v: unknown): string[] => {
+      if (Array.isArray(v)) return v.map((x) => String(x).trim()).filter(Boolean);
+      if (typeof v === "string") {
+        return v
+          .split("\n")
+          .map((s) => s.replace(/^[•\-–—]\s*/, "").trim())
+          .filter(Boolean);
+      }
+      return [];
+    };
+    const fn = toArr(raw.functionality);
+    const ui = toArr(raw.interface);
+    const sections: ChangelogSections = {};
+    if (fn.length) sections.functionality = fn;
+    if (ui.length) sections.interface = ui;
+    const bodyParts = [...fn, ...ui].map((s) => `— ${s}`).join("\n");
+    return { body: bodyParts, sections };
+  }
+  return { body: "" };
+}
 
 function sanitizeSnippet(s: string, max = 400): string {
   return s.replace(/<[^>]+>/g, " ").slice(0, max);
@@ -56,18 +97,18 @@ export async function fetchReleaseNotes(): Promise<
       return { ok: false, message: "Неожиданный ответ API" };
     }
 
-    let bundled: Record<string, string> = {};
+    let bundled: Record<string, RawNote> = {};
     try {
       const br = await fetch("/release-notes.json", { cache: "no-cache" });
-      if (br.ok) bundled = (await br.json()) as Record<string, string>;
+      if (br.ok) bundled = (await br.json()) as Record<string, RawNote>;
     } catch {
       bundled = {};
     }
 
-    let bundledEn: Record<string, string> = {};
+    let bundledEn: Record<string, RawNote> = {};
     try {
       const br = await fetch("/release-notes.en.json", { cache: "no-cache" });
-      if (br.ok) bundledEn = (await br.json()) as Record<string, string>;
+      if (br.ok) bundledEn = (await br.json()) as Record<string, RawNote>;
     } catch {
       bundledEn = {};
     }
@@ -75,15 +116,18 @@ export async function fetchReleaseNotes(): Promise<
     const items: ChangelogItem[] = data.map((r: Record<string, unknown>) => {
       const tag = r.tag_name != null ? String(r.tag_name) : "";
       const apiBody = typeof r.body === "string" ? r.body.trim() : "";
-      const fromBundle = tag && bundled[tag] != null ? String(bundled[tag]).trim() : "";
-      const body = apiBody || fromBundle;
-      const enBody = tag && bundledEn[tag] != null ? String(bundledEn[tag]).trim() : "";
+      const ru = parseNote(tag ? bundled[tag] : undefined);
+      const en = parseNote(tag ? bundledEn[tag] : undefined);
+      // Приоритет RU-тела: сначала структурированное (если есть), затем api, затем legacy-строка бандла.
+      const body = ru.sections ? ru.body : apiBody || ru.body;
       return {
         tag,
         name: r.name != null ? String(r.name) : "",
         publishedAt: r.published_at != null ? String(r.published_at) : "",
         body,
-        bodyEn: enBody || undefined,
+        bodyEn: en.body || undefined,
+        sections: ru.sections,
+        sectionsEn: en.sections,
         url: typeof r.html_url === "string" ? r.html_url : "",
       };
     });

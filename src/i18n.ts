@@ -152,6 +152,8 @@ const EN: Dict = {
   "updates.timeline.newBadge": "NEW",
   "updates.timeline.activeBadge": "ACTIVE",
   "updates.timeline.noDescription": "No description.",
+  "updates.section.functionality": "Functionality",
+  "updates.section.interface": "Interface",
 
   // Modals (profile add / delete)
   "modal.addTitle": "New profile",
@@ -299,6 +301,8 @@ const RU: Dict = {
   "updates.foot.fetchFail": "Не удалось загрузить релизы",
   "updates.timeline.openRelease": "Релиз на GitHub",
   "updates.timeline.openQp": "Quick-patch на GitHub",
+  "updates.section.functionality": "Функционал",
+  "updates.section.interface": "Интерфейс",
   "updates.timeline.newBadge": "NEW",
   "updates.timeline.activeBadge": "ACTIVE",
   "updates.timeline.noDescription": "Нет описания.",

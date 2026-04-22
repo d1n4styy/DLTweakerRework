@@ -13,8 +13,50 @@ export type UpdateTimelineDeps = {
     openRelease?: string;
     openQp?: string;
     noDescription?: string;
+    sectionFunctionality?: string;
+    sectionInterface?: string;
   };
 };
+
+/** Запись считается «важной» (фильтр Important), если в неё попал непустой
+ *  блок `functionality`. Legacy-строки без секций в релизах остаются важными
+ *  (мы не знаем их разбивки и не хотим их терять), а в quick-patch — наоборот
+ *  по умолчанию не важные (квик-патчи по природе косметические). */
+export function isImportantChangelogItem(
+  it: ChangelogItem,
+  kind: UpdateTimelineKind,
+): boolean {
+  if (it.sections?.functionality && it.sections.functionality.length > 0) return true;
+  if (it.sections) return false; // есть структура, но functionality пуст → только интерфейс
+  return kind !== "quickpatch";
+}
+
+/** Добавляет в `host` блок «<заголовок> + ul с bullets». Если bullets пусты — ничего не добавляет. */
+function appendSection(
+  host: HTMLElement,
+  title: string,
+  bullets: string[] | undefined,
+  modifierClass: string,
+): void {
+  if (!bullets || bullets.length === 0) return;
+  const section = document.createElement("div");
+  section.className = `updates-timeline-part ${modifierClass}`;
+
+  const h = document.createElement("h4");
+  h.className = "updates-timeline-part-title";
+  h.textContent = title;
+  section.append(h);
+
+  const ul = document.createElement("ul");
+  ul.className = "updates-timeline-bullets";
+  for (const line of bullets) {
+    const li = document.createElement("li");
+    li.textContent = line.replace(/^[•\-–—]\s*/, "");
+    ul.append(li);
+  }
+  section.append(ul);
+  host.append(section);
+}
 
 function bodyToBulletLines(simplified: string): string[] {
   const raw = simplified.trim();
@@ -78,26 +120,43 @@ function createUpdateTimelineItem(
   const dateText = deps.formatDate(it.publishedAt);
   meta.textContent = dateText || (tag && title === tag ? "" : tag);
 
-  const btxt = deps.simplifyBody(it.body);
-  const lines = bodyToBulletLines(btxt);
-
   const bodyWrap = document.createElement("div");
   bodyWrap.className = "updates-timeline-body";
   const noDescLabel = deps.labels?.noDescription ?? "Нет описания.";
-  if (lines.length === 1) {
-    const p = document.createElement("p");
-    p.className = "updates-timeline-plain";
-    p.textContent = lines[0] || noDescLabel;
-    bodyWrap.append(p);
+
+  // Если запись имеет структурированные секции (functionality/interface) — рендерим
+  // каждую секцию с подзаголовком. Иначе (legacy-строка) — старый рендер из bullets.
+  if (it.sections && (it.sections.functionality?.length || it.sections.interface?.length)) {
+    appendSection(
+      bodyWrap,
+      deps.labels?.sectionFunctionality ?? "Функционал",
+      it.sections.functionality,
+      "updates-timeline-section--fn",
+    );
+    appendSection(
+      bodyWrap,
+      deps.labels?.sectionInterface ?? "Интерфейс",
+      it.sections.interface,
+      "updates-timeline-section--ui",
+    );
   } else {
-    const ul = document.createElement("ul");
-    ul.className = "updates-timeline-bullets";
-    for (const line of lines) {
-      const li = document.createElement("li");
-      li.textContent = line.replace(/^[•\-–—]\s*/, "");
-      ul.append(li);
+    const btxt = deps.simplifyBody(it.body);
+    const lines = bodyToBulletLines(btxt);
+    if (lines.length === 1) {
+      const p = document.createElement("p");
+      p.className = "updates-timeline-plain";
+      p.textContent = lines[0] || noDescLabel;
+      bodyWrap.append(p);
+    } else {
+      const ul = document.createElement("ul");
+      ul.className = "updates-timeline-bullets";
+      for (const line of lines) {
+        const li = document.createElement("li");
+        li.textContent = line.replace(/^[•\-–—]\s*/, "");
+        ul.append(li);
+      }
+      bodyWrap.append(ul);
     }
-    bodyWrap.append(ul);
   }
 
   card.append(head, meta, bodyWrap);
@@ -122,7 +181,8 @@ function createUpdateTimelineItem(
   return article;
 }
 
-/** Вертикальный таймлайн: линия + элементы. `filter` — «важные» = последние 4 записи выбранного типа. */
+/** Вертикальный таймлайн: линия + элементы. `filter === "important"` — только записи
+ *  с непустой секцией `functionality` (см. `isImportantChangelogItem`). */
 export function renderUpdateTimeline(
   listEl: HTMLElement,
   items: ChangelogItem[],
@@ -130,7 +190,7 @@ export function renderUpdateTimeline(
   deps: UpdateTimelineDeps,
 ): void {
   listEl.textContent = "";
-  const arr = filter === "important" ? items.slice(0, Math.min(4, items.length)) : items;
+  const arr = filter === "important" ? items.filter((it) => isImportantChangelogItem(it, deps.kind)) : items;
 
   const root = document.createElement("div");
   root.className = "updates-timeline-root";

@@ -608,9 +608,12 @@ function pickLocalizedBody(it: ChangelogItem, lang: Lang): string {
   return it.body;
 }
 
-/** Возвращает новый массив с телом под текущий язык — исходный кэш не мутирует. */
+/** Возвращает новый массив с телом и секциями под текущий язык — исходный кэш не мутирует. */
 function localizeChangelog(items: ChangelogItem[], lang: Lang): ChangelogItem[] {
-  return items.map((it) => ({ ...it, body: pickLocalizedBody(it, lang) }));
+  return items.map((it) => {
+    const localizedSections = lang === "en" && it.sectionsEn ? it.sectionsEn : it.sections;
+    return { ...it, body: pickLocalizedBody(it, lang), sections: localizedSections };
+  });
 }
 
 function simplifyReleaseBody(raw: string | null | undefined): string {
@@ -851,6 +854,8 @@ function renderUpdatesSection(
       openRelease: t("updates.timeline.openRelease"),
       openQp: t("updates.timeline.openQp"),
       noDescription: t("updates.timeline.noDescription"),
+      sectionFunctionality: t("updates.section.functionality"),
+      sectionInterface: t("updates.section.interface"),
     },
   };
 
